@@ -17,9 +17,9 @@ onMounted(() => {
     <div class="flex items-center justify-between mb-8">
       <h1 class="text-3xl font-bold text-gray-900">Users</h1>
       <button
-        @click="usersStore.fetchUsers()"
         :disabled="loading"
         class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors"
+        @click="usersStore.fetchUsers()"
       >
         {{ loading ? 'Loading...' : 'Refresh' }}
       </button>
@@ -27,12 +27,14 @@ onMounted(() => {
 
     <!-- Error State -->
     <div v-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-      <p class="text-red-600">{{ error }}</p>
+      <p class="text-red-600">
+        {{ error }}
+      </p>
     </div>
 
     <!-- Loading State -->
     <div v-if="loading && users.length === 0" class="text-center py-12">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto" />
       <p class="mt-4 text-gray-600">Loading users...</p>
     </div>
 

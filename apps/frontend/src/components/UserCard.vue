@@ -34,7 +34,9 @@ function formatDate(dateString: string): string {
         <h3 class="text-lg font-semibold text-gray-900 truncate">
           {{ user.name }}
         </h3>
-        <p class="text-gray-500 truncate">{{ user.email }}</p>
+        <p class="text-gray-500 truncate">
+          {{ user.email }}
+        </p>
       </div>
     </div>
     <div class="mt-4 pt-4 border-t border-gray-100">

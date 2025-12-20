@@ -19,7 +19,7 @@ export class LoggingInterceptor implements NestInterceptor {
       tap(() => {
         const responseTime = Date.now() - now
         this.logger.log(`${method} ${url} - ${responseTime}ms`)
-      })
+      }),
     )
   }
 }

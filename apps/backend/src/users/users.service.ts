@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
-import type { UserDto, CreateUserDto } from "@my-app/shared";
+import { Injectable, NotFoundException } from '@nestjs/common'
+import { PrismaService } from '../prisma/prisma.service'
+import type { UserDto, CreateUserDto } from '@my-app/shared'
 
 /**
  * 用户服务
@@ -23,13 +23,13 @@ export class UsersService {
         createdAt: true,
         updatedAt: true,
       },
-    });
+    })
 
     return users.map((user) => ({
       ...user,
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),
-    }));
+    }))
   }
 
   /**
@@ -46,17 +46,17 @@ export class UsersService {
         createdAt: true,
         updatedAt: true,
       },
-    });
+    })
 
     if (!user) {
-      throw new NotFoundException(`用户 ID ${id} 不存在`);
+      throw new NotFoundException(`用户 ID ${id} 不存在`)
     }
 
     return {
       ...user,
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),
-    };
+    }
   }
 
   /**
@@ -78,12 +78,12 @@ export class UsersService {
         createdAt: true,
         updatedAt: true,
       },
-    });
+    })
 
     return {
       ...user,
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),
-    };
+    }
   }
 }

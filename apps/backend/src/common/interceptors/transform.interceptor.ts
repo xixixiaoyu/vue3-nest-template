@@ -23,7 +23,7 @@ export class TransformInterceptor<T> implements NestInterceptor<T, TransformedRe
         success: true,
         data,
         timestamp: new Date().toISOString(),
-      }))
+      })),
     )
   }
 }

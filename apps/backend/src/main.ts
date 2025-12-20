@@ -25,7 +25,7 @@ async function bootstrap() {
       whitelist: true, // 自动剥离非白名单属性
       transform: true, // 自动转换类型
       forbidNonWhitelisted: true, // 禁止非白名单属性
-    })
+    }),
   )
 
   // 全局异常过滤器

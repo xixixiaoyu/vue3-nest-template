@@ -3,17 +3,17 @@
  */
 export interface UserDto {
   /** 用户 ID */
-  id: number;
+  id: number
   /** 邮箱 */
-  email: string;
+  email: string
   /** 用户名 */
-  name: string;
+  name: string
   /** 头像 URL */
-  avatar?: string;
+  avatar?: string
   /** 创建时间 */
-  createdAt: string;
+  createdAt: string
   /** 更新时间 */
-  updatedAt: string;
+  updatedAt: string
 }
 
 /**
@@ -21,11 +21,11 @@ export interface UserDto {
  */
 export interface CreateUserDto {
   /** 邮箱 */
-  email: string;
+  email: string
   /** 用户名 */
-  name: string;
+  name: string
   /** 密码 */
-  password: string;
+  password: string
 }
 
 /**
@@ -33,9 +33,9 @@ export interface CreateUserDto {
  */
 export interface UpdateUserDto {
   /** 用户名 */
-  name?: string;
+  name?: string
   /** 头像 URL */
-  avatar?: string;
+  avatar?: string
 }
 
 /**
@@ -43,9 +43,9 @@ export interface UpdateUserDto {
  */
 export interface LoginDto {
   /** 邮箱 */
-  email: string;
+  email: string
   /** 密码 */
-  password: string;
+  password: string
 }
 
 /**
@@ -53,7 +53,7 @@ export interface LoginDto {
  */
 export interface AuthResponseDto {
   /** 访问令牌 */
-  accessToken: string;
+  accessToken: string
   /** 用户信息 */
-  user: UserDto;
+  user: UserDto
 }
