@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core'
 import { ValidationPipe, Logger } from '@nestjs/common'
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
 import { AppModule } from './app.module'
 import { AllExceptionsFilter, LoggingInterceptor } from './common'
 
@@ -33,6 +34,17 @@ async function bootstrap() {
 
   // 全局日志拦截器
   app.useGlobalInterceptors(new LoggingInterceptor())
+
+  // Swagger API 文档配置
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('My App API')
+    .setDescription('API 接口文档')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build()
+  const document = SwaggerModule.createDocument(app, swaggerConfig)
+  SwaggerModule.setup('api/docs', app, document)
+  logger.log('📚 Swagger 文档: http://localhost:' + (process.env.PORT || 3000) + '/api/docs')
 
   const port = process.env.PORT || 3000
   await app.listen(port)
