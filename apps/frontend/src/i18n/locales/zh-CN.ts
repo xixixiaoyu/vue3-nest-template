@@ -1,0 +1,41 @@
+export default {
+  common: {
+    home: '首页',
+    users: '用户',
+    loading: '加载中...',
+    refresh: '刷新',
+    back: '返回',
+    backToHome: '返回首页',
+    language: '语言',
+  },
+  home: {
+    title: '欢迎使用 My App',
+    description: '一个全栈 Monorepo 模板，包含 Vue 3、NestJS、Prisma 和 PostgreSQL。',
+    frontend: '前端',
+    frontendDesc: 'Vue 3 + Vite + TypeScript + Tailwind CSS + Pinia + Vue Router',
+    backend: '后端',
+    backendDesc: 'NestJS + Prisma + PostgreSQL RESTful API',
+    shared: '共享模块',
+    sharedDesc: '前后端共享的 TypeScript 类型和 DTO',
+    viewUsersDemo: '查看用户演示',
+  },
+  login: {
+    title: '登录账户',
+    email: '邮箱',
+    emailPlaceholder: '邮箱地址',
+    password: '密码',
+    passwordPlaceholder: '密码',
+    submit: '登录',
+    submitting: '登录中...',
+  },
+  users: {
+    title: '用户列表',
+    loading: '正在加载用户...',
+    empty: '未找到用户。请启动后端并创建一些用户！',
+    joined: '加入于',
+  },
+  notFound: {
+    title: '页面未找到',
+    description: '抱歉，您访问的页面不存在',
+  },
+}

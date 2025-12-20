@@ -13,6 +13,7 @@ import {
 import VChart from 'vue-echarts'
 import App from './App.vue'
 import router from './router'
+import i18n from './i18n'
 import './styles/main.css'
 
 // 注册 ECharts 必要组件
@@ -35,6 +36,7 @@ pinia.use(piniaPluginPersistedstate)
 
 app.use(pinia)
 app.use(router)
+app.use(i18n)
 
 // 全局注册 VChart 组件
 app.component('VChart', VChart)

@@ -1,12 +1,19 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { User } from '@my-app/shared'
 
 defineProps<{
   user: User
 }>()
 
+const { t, locale } = useI18n()
+
 function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('en-US', {
+  const localeMap: Record<string, string> = {
+    'zh-CN': 'zh-CN',
+    'en-US': 'en-US',
+  }
+  return new Date(dateString).toLocaleDateString(localeMap[locale.value] || 'en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -40,7 +47,7 @@ function formatDate(dateString: string): string {
       </div>
     </div>
     <div class="mt-4 pt-4 border-t border-gray-100">
-      <p class="text-sm text-gray-400">Joined {{ formatDate(user.createdAt) }}</p>
+      <p class="text-sm text-gray-400">{{ t('users.joined') }} {{ formatDate(user.createdAt) }}</p>
     </div>
   </div>
 </template>
