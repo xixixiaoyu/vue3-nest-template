@@ -67,10 +67,20 @@ export const UserSchema = z.object({
 
 /**
  * 认证响应 Schema
+ * 支持短期访问令牌 + 长期刷新令牌
  */
 export const AuthResponseSchema = z.object({
   accessToken: z.string(),
+  refreshToken: z.string().optional(), // 刷新令牌（可选，仅登录时返回）
+  expiresIn: z.number().optional(), // 访问令牌过期时间（秒）
   user: UserSchema,
+})
+
+/**
+ * 刷新令牌请求 Schema
+ */
+export const RefreshTokenSchema = z.object({
+  refreshToken: z.string({ required_error: '刷新令牌不能为空' }).min(1, '刷新令牌不能为空'),
 })
 
 // 从 Zod Schema 推断 TypeScript 类型
@@ -79,3 +89,4 @@ export type RegisterInput = z.infer<typeof RegisterSchema>
 export type UpdateUserInput = z.infer<typeof UpdateUserSchema>
 export type User = z.infer<typeof UserSchema>
 export type AuthResponse = z.infer<typeof AuthResponseSchema>
+export type RefreshTokenInput = z.infer<typeof RefreshTokenSchema>

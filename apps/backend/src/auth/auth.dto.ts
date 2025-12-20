@@ -1,5 +1,5 @@
 import { createZodDto } from 'nestjs-zod'
-import { LoginSchema, RegisterSchema } from '@my-app/shared'
+import { LoginSchema, RegisterSchema, RefreshTokenSchema } from '@my-app/shared'
 
 /**
  * 登录请求 DTO
@@ -11,3 +11,8 @@ export class LoginDto extends createZodDto(LoginSchema) {}
  * 注册请求 DTO
  */
 export class RegisterDto extends createZodDto(RegisterSchema) {}
+
+/**
+ * 刷新令牌请求 DTO
+ */
+export class RefreshTokenDto extends createZodDto(RefreshTokenSchema) {}
