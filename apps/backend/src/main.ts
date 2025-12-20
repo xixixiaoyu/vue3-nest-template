@@ -15,11 +15,8 @@ async function bootstrap() {
   // 设置全局路由前缀
   app.setGlobalPrefix('api')
 
-  // 启用 CORS 跨域支持
-  app.enableCors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
-    credentials: true,
-  })
+  // 启用 CORS（通过代理访问）
+  app.enableCors()
 
   // 全局 Zod 验证管道（替代 class-validator）
   app.useGlobalPipes(new ZodValidationPipe())
