@@ -1,0 +1,59 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs
+dist
+**/dist
+.turbo
+**/.turbo
+
+# Development files
+.git
+.gitignore
+.github
+.vscode
+.idea
+*.md
+!README.md
+
+# Environment files (use Docker secrets instead)
+.env
+.env.*
+!.env.example
+
+# Test files
+**/*.spec.ts
+**/*.test.ts
+**/__tests__
+coverage
+.nyc_output
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+*.swp
+*.swo
+*~
+
+# Prisma generated files (will be regenerated)
+apps/backend/node_modules/.prisma
+
+# Temporary files
+tmp
+temp
+*.tmp
+*.temp
+
+# Docker files (prevent recursive COPY)
+Dockerfile*
+docker-compose*.yml
+.dockerignore

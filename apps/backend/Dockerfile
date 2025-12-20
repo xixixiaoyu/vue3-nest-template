@@ -1,0 +1,80 @@
+# ============================================
+# Stage 1: Build dependencies (monorepo base)
+# ============================================
+FROM node:20-alpine AS base
+
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+WORKDIR /app
+
+# Copy workspace configuration
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY apps/backend/package.json ./apps/backend/
+COPY packages/shared/package.json ./packages/shared/
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# ============================================
+# Stage 2: Build application
+# ============================================
+FROM base AS builder
+
+WORKDIR /app
+
+# Copy source code
+COPY packages/shared ./packages/shared
+COPY apps/backend ./apps/backend
+COPY tsconfig.base.json ./
+
+# Generate Prisma client
+RUN pnpm --filter @my-app/backend prisma:generate
+
+# Build shared package and backend
+RUN pnpm --filter @my-app/shared build 2>/dev/null || true
+RUN pnpm --filter @my-app/backend build
+
+# ============================================
+# Stage 3: Production image
+# ============================================
+FROM node:20-alpine AS production
+
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+
+# Create non-root user for security
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nestjs
+
+WORKDIR /app
+
+# Copy package files for production install
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/backend/package.json ./apps/backend/
+COPY packages/shared/package.json ./packages/shared/
+
+# Install production dependencies only
+RUN pnpm install --frozen-lockfile --prod
+
+# Copy Prisma schema and generate client
+COPY apps/backend/prisma ./apps/backend/prisma
+RUN pnpm --filter @my-app/backend prisma:generate
+
+# Copy built application
+COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
+COPY --from=builder /app/packages/shared/dist ./packages/shared/dist 2>/dev/null || true
+
+# Change ownership to non-root user
+RUN chown -R nestjs:nodejs /app
+
+USER nestjs
+
+WORKDIR /app/apps/backend
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+
+# Start application
+CMD ["node", "dist/main"]

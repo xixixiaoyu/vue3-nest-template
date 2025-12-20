@@ -9,21 +9,24 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
     "clean": "rm -rf dist"
   },
   "dependencies": {
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "tsup": "^8.5.1",
     "typescript": "^5.7.2"
   }
 }
