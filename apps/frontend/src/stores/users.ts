@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { UserDto } from '@my-app/shared'
+import type { User } from '@my-app/shared'
 import { api } from '@/api'
 
 /**
@@ -8,7 +8,7 @@ import { api } from '@/api'
  */
 export const useUsersStore = defineStore('users', () => {
   /** 用户列表 */
-  const users = ref<UserDto[]>([])
+  const users = ref<User[]>([])
   /** 加载状态 */
   const loading = ref(false)
   /** 错误信息 */

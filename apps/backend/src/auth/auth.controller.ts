@@ -1,10 +1,10 @@
-import { Controller, Post, Body, Get, UseGuards, UsePipes } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiBody, ApiBearerAuth } from '@nestjs/swagger'
+import { Controller, Post, Body, Get, UseGuards } from '@nestjs/common'
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger'
 import { AuthService } from './auth.service'
 import { JwtAuthGuard } from './jwt-auth.guard'
 import { CurrentUser } from './current-user.decorator'
-import { ZodValidationPipe } from '../common'
-import { LoginSchema, type LoginDto, type UserDto, type AuthResponseDto } from '@my-app/shared'
+import { LoginDto } from './auth.dto'
+import type { User, AuthResponse } from '@my-app/shared'
 
 /**
  * 认证控制器
@@ -19,18 +19,7 @@ export class AuthController {
    */
   @Post('login')
   @ApiOperation({ summary: '用户登录' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      required: ['email', 'password'],
-      properties: {
-        email: { type: 'string', example: 'user@example.com' },
-        password: { type: 'string', example: 'password123' },
-      },
-    },
-  })
-  @UsePipes(new ZodValidationPipe(LoginSchema))
-  async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
+  async login(@Body() loginDto: LoginDto): Promise<AuthResponse> {
     return this.authService.login(loginDto)
   }
 
@@ -41,7 +30,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '获取当前用户信息' })
-  async getProfile(@CurrentUser() user: UserDto): Promise<UserDto> {
+  async getProfile(@CurrentUser() user: User): Promise<User> {
     return user
   }
 }

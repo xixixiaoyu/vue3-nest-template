@@ -1,5 +1,5 @@
 // Zod Schemas (Single Source of Truth)
 export * from './schemas/auth.schema'
 
-// Legacy DTOs (可逐步迁移到 Zod Schema)
+// 通用响应类型
 export * from './dto/common.dto'

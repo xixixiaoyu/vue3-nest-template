@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { UserDto } from '@my-app/shared'
+import type { User } from '@my-app/shared'
 
 defineProps<{
-  user: UserDto
+  user: User
 }>()
 
 function formatDate(dateString: string): string {

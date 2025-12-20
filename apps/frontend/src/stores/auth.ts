@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { httpClient } from '../api'
-import type { UserDto, LoginDto, AuthResponseDto } from '@my-app/shared'
+import type { User, LoginInput, AuthResponse } from '@my-app/shared'
 
 /**
  * 认证状态管理
@@ -12,7 +12,7 @@ export const useAuthStore = defineStore(
   () => {
     // 状态
     const token = ref<string | null>(null)
-    const user = ref<UserDto | null>(null)
+    const user = ref<User | null>(null)
     const loading = ref(false)
     const error = ref<string | null>(null)
 
@@ -22,12 +22,12 @@ export const useAuthStore = defineStore(
     /**
      * 登录
      */
-    async function login(credentials: LoginDto): Promise<boolean> {
+    async function login(credentials: LoginInput): Promise<boolean> {
       loading.value = true
       error.value = null
 
       try {
-        const { data } = await httpClient.post<AuthResponseDto>('/auth/login', credentials)
+        const { data } = await httpClient.post<AuthResponse>('/auth/login', credentials)
         token.value = data.accessToken
         user.value = data.user
         return true
@@ -47,7 +47,7 @@ export const useAuthStore = defineStore(
       if (!token.value) return
 
       try {
-        const { data } = await httpClient.get<UserDto>('/auth/me', {
+        const { data } = await httpClient.get<User>('/auth/me', {
           headers: { Authorization: `Bearer ${token.value}` },
         })
         user.value = data

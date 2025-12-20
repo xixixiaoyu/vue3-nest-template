@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core'
-import { ValidationPipe, Logger } from '@nestjs/common'
+import { Logger } from '@nestjs/common'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
+import { ZodValidationPipe, cleanupOpenApiDoc } from 'nestjs-zod'
 import { AppModule } from './app.module'
 import { AllExceptionsFilter, LoggingInterceptor } from './common'
 
@@ -20,14 +21,8 @@ async function bootstrap() {
     credentials: true,
   })
 
-  // 全局验证管道
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true, // 自动剥离非白名单属性
-      transform: true, // 自动转换类型
-      forbidNonWhitelisted: true, // 禁止非白名单属性
-    }),
-  )
+  // 全局 Zod 验证管道（替代 class-validator）
+  app.useGlobalPipes(new ZodValidationPipe())
 
   // 全局异常过滤器
   app.useGlobalFilters(new AllExceptionsFilter())
@@ -43,7 +38,8 @@ async function bootstrap() {
     .addBearerAuth()
     .build()
   const document = SwaggerModule.createDocument(app, swaggerConfig)
-  SwaggerModule.setup('api/docs', app, document)
+  // 使用 cleanupOpenApiDoc 处理 Zod Schema 生成的 OpenAPI 文档
+  SwaggerModule.setup('api/docs', app, cleanupOpenApiDoc(document))
   logger.log('📚 Swagger 文档: http://localhost:' + (process.env.PORT || 3000) + '/api/docs')
 
   const port = process.env.PORT || 3000

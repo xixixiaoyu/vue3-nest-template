@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { UserDto, ApiResponse } from '@my-app/shared'
+import type { User, ApiResponse } from '@my-app/shared'
 
 /**
  * HTTP 客户端实例
@@ -45,16 +45,16 @@ export const api = {
   /**
    * 获取用户列表
    */
-  async getUsers(): Promise<ApiResponse<UserDto[]>> {
-    const { data } = await httpClient.get<ApiResponse<UserDto[]>>('/users')
+  async getUsers(): Promise<ApiResponse<User[]>> {
+    const { data } = await httpClient.get<ApiResponse<User[]>>('/users')
     return data
   },
 
   /**
    * 获取单个用户
    */
-  async getUser(id: number): Promise<ApiResponse<UserDto>> {
-    const { data } = await httpClient.get<ApiResponse<UserDto>>(`/users/${id}`)
+  async getUser(id: number): Promise<ApiResponse<User>> {
+    const { data } = await httpClient.get<ApiResponse<User>>(`/users/${id}`)
     return data
   },
 
@@ -65,8 +65,8 @@ export const api = {
     email: string
     name: string
     password: string
-  }): Promise<ApiResponse<UserDto>> {
-    const { data } = await httpClient.post<ApiResponse<UserDto>>('/users', userData)
+  }): Promise<ApiResponse<User>> {
+    const { data } = await httpClient.post<ApiResponse<User>>('/users', userData)
     return data
   },
 }

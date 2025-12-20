@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import * as bcrypt from 'bcrypt'
-import type { UserDto, RegisterDto } from '@my-app/shared'
+import type { User, RegisterInput } from '@my-app/shared'
 
 /**
  * 用户服务
@@ -14,7 +14,7 @@ export class UsersService {
   /**
    * 获取所有用户
    */
-  async findAll(): Promise<UserDto[]> {
+  async findAll(): Promise<User[]> {
     const users = await this.prisma.user.findMany({
       select: {
         id: true,
@@ -36,7 +36,7 @@ export class UsersService {
   /**
    * 根据 ID 获取单个用户
    */
-  async findOne(id: number): Promise<UserDto> {
+  async findOne(id: number): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: { id },
       select: {
@@ -63,7 +63,7 @@ export class UsersService {
   /**
    * 创建新用户
    */
-  async create(createUserDto: RegisterDto): Promise<UserDto> {
+  async create(createUserDto: RegisterInput): Promise<User> {
     // 检查邮箱是否已存在
     const existingUser = await this.prisma.user.findUnique({
       where: { email: createUserDto.email },

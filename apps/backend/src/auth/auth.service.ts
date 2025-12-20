@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { PrismaService } from '../prisma/prisma.service'
 import * as bcrypt from 'bcrypt'
-import type { LoginDto, UserDto, AuthResponseDto } from '@my-app/shared'
+import type { LoginInput, User, AuthResponse } from '@my-app/shared'
 
 /**
  * 认证服务
@@ -18,7 +18,7 @@ export class AuthService {
   /**
    * 验证用户凭据
    */
-  async validateUser(email: string, password: string): Promise<UserDto | null> {
+  async validateUser(email: string, password: string): Promise<User | null> {
     const user = await this.prisma.user.findUnique({
       where: { email },
     })
@@ -45,7 +45,7 @@ export class AuthService {
   /**
    * 用户登录
    */
-  async login(loginDto: LoginDto): Promise<AuthResponseDto> {
+  async login(loginDto: LoginInput): Promise<AuthResponse> {
     const user = await this.validateUser(loginDto.email, loginDto.password)
 
     if (!user) {
@@ -64,7 +64,7 @@ export class AuthService {
   /**
    * 根据用户 ID 获取用户信息
    */
-  async getUserById(userId: number): Promise<UserDto | null> {
+  async getUserById(userId: number): Promise<User | null> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {

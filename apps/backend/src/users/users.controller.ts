@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Body, Param, ParseIntPipe, UsePipes } from '@nestjs/common'
+import { Controller, Get, Post, Body, Param, ParseIntPipe } from '@nestjs/common'
 import { ApiTags, ApiOperation } from '@nestjs/swagger'
 import { UsersService } from './users.service'
-import { ZodValidationPipe } from '../common'
-import { RegisterSchema, type UserDto, type RegisterDto, type ApiResponse } from '@my-app/shared'
+import { RegisterDto } from '../auth/auth.dto'
+import type { User, ApiResponse } from '@my-app/shared'
 
 /**
  * 用户控制器
@@ -18,7 +18,7 @@ export class UsersController {
    */
   @Get()
   @ApiOperation({ summary: '获取所有用户' })
-  async findAll(): Promise<ApiResponse<UserDto[]>> {
+  async findAll(): Promise<ApiResponse<User[]>> {
     const users = await this.usersService.findAll()
     return {
       success: true,
@@ -32,7 +32,7 @@ export class UsersController {
    */
   @Get(':id')
   @ApiOperation({ summary: '获取单个用户' })
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<ApiResponse<UserDto>> {
+  async findOne(@Param('id', ParseIntPipe) id: number): Promise<ApiResponse<User>> {
     const user = await this.usersService.findOne(id)
     return {
       success: true,
@@ -46,8 +46,7 @@ export class UsersController {
    */
   @Post()
   @ApiOperation({ summary: '创建新用户' })
-  @UsePipes(new ZodValidationPipe(RegisterSchema))
-  async create(@Body() createUserDto: RegisterDto): Promise<ApiResponse<UserDto>> {
+  async create(@Body() createUserDto: RegisterDto): Promise<ApiResponse<User>> {
     const user = await this.usersService.create(createUserDto)
     return {
       success: true,
