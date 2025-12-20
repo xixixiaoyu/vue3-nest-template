@@ -12,6 +12,14 @@ const httpClient = axios.create({
   },
 })
 
+/**
+ * 从 cookie 中获取指定名称的值
+ */
+function getCookie(name: string): string | null {
+  const match = document.cookie.match(new RegExp(`(^| )${name}=([^;]+)`))
+  return match ? decodeURIComponent(match[2]) : null
+}
+
 // 请求拦截器
 httpClient.interceptors.request.use(
   (config) => {
@@ -20,6 +28,15 @@ httpClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+
+    // 非 GET 请求添加 CSRF token
+    if (config.method && !['get', 'head', 'options'].includes(config.method.toLowerCase())) {
+      const csrfToken = getCookie('XSRF-TOKEN')
+      if (csrfToken) {
+        config.headers['X-XSRF-TOKEN'] = csrfToken
+      }
+    }
+
     return config
   },
   (error) => Promise.reject(error),
