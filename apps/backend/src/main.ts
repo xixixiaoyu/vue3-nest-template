@@ -1,32 +1,43 @@
 import { NestFactory } from '@nestjs/core'
-import { ValidationPipe } from '@nestjs/common'
+import { ValidationPipe, Logger } from '@nestjs/common'
 import { AppModule } from './app.module'
+import { AllExceptionsFilter, LoggingInterceptor } from './common'
 
+/**
+ * 应用程序启动入口
+ */
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
+  const logger = new Logger('Bootstrap')
 
-  // Global prefix for all routes
+  // 设置全局路由前缀
   app.setGlobalPrefix('api')
 
-  // Enable CORS
+  // 启用 CORS 跨域支持
   app.enableCors({
     origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
     credentials: true,
   })
 
-  // Global validation pipe
+  // 全局验证管道
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      forbidNonWhitelisted: true,
+      whitelist: true, // 自动剥离非白名单属性
+      transform: true, // 自动转换类型
+      forbidNonWhitelisted: true, // 禁止非白名单属性
     })
   )
+
+  // 全局异常过滤器
+  app.useGlobalFilters(new AllExceptionsFilter())
+
+  // 全局日志拦截器
+  app.useGlobalInterceptors(new LoggingInterceptor())
 
   const port = process.env.PORT || 3000
   await app.listen(port)
 
-  console.log(`🚀 Backend running on http://localhost:${port}`)
+  logger.log(`🚀 服务已启动: http://localhost:${port}`)
 }
 
 bootstrap()
