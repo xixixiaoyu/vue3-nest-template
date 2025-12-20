@@ -26,10 +26,6 @@ COPY packages/shared ./packages/shared
 COPY apps/frontend ./apps/frontend
 COPY tsconfig.base.json ./
 
-# Build arguments for environment variables
-ARG VITE_API_BASE_URL=http://localhost:3000
-ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
-
 # Build shared package and frontend
 RUN pnpm --filter @my-app/shared build 2>/dev/null || true
 RUN pnpm --filter @my-app/frontend build
