@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, session, shell } from 'electron'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 
@@ -55,7 +55,23 @@ function createWindow() {
   }
 }
 
-app.whenReady().then(createWindow)
+app.whenReady().then(() => {
+  // 设置 Content Security Policy
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    const csp = VITE_DEV_SERVER_URL
+      ? "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws://localhost:*; img-src 'self' data:"
+      : "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
+
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [csp],
+      },
+    })
+  })
+
+  createWindow()
+})
 
 app.on('window-all-closed', () => {
   mainWindow = null
