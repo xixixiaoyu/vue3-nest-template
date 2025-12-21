@@ -31,6 +31,11 @@ nest-vue-template/
 - **图标**: Lucide Vue
 - **工具**: VueUse
 
+### 跨端能力
+- **移动端**: Capacitor 8（iOS / Android）
+- **桌面端**: Electron 36（Windows / macOS / Linux）
+- **PWA**: vite-plugin-pwa（渐进式 Web 应用）
+
 ### 后端 (NestJS 10)
 - **运行时**: Node.js 18+
 - **数据库**: PostgreSQL 16 + Prisma ORM
@@ -67,6 +72,18 @@ pnpm lint                   # ESLint 检查
 pnpm format                 # Prettier 格式化
 pnpm test                   # 运行测试
 
+# 跨端开发（在 frontend 目录下执行）
+pnpm cap:sync               # 同步 Web 资源到原生项目
+pnpm cap:open:ios           # 打开 Xcode
+pnpm cap:open:android       # 打开 Android Studio
+pnpm cap:run:ios            # 运行 iOS 应用
+pnpm cap:run:android        # 运行 Android 应用
+pnpm electron:dev           # 启动 Electron 开发模式
+pnpm electron:build         # 构建所有平台桌面应用
+pnpm electron:build:mac     # 构建 macOS 应用
+pnpm electron:build:win     # 构建 Windows 应用
+pnpm electron:build:linux   # 构建 Linux 应用
+
 # Docker
 docker compose up postgres redis -d  # 启动数据库服务
 docker compose up -d                 # 启动所有服务
@@ -91,6 +108,10 @@ docker compose up -d                 # 启动所有服务
 - `src/composables/` - 组合式函数
 - `src/stores/` - Pinia 状态管理
 - `src/i18n/` - 国际化配置
+- `electron/` - Electron 主进程与预加载脚本
+- `android/` - Android 原生项目（Capacitor 生成）
+- `ios/` - iOS 原生项目（Capacitor 生成）
+- `capacitor.config.ts` - Capacitor 配置
 
 ## shadcn-vue 组件开发
 

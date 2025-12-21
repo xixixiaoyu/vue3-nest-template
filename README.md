@@ -47,6 +47,14 @@ nest-vue-template/
 | 图标 | Lucide Vue |
 | 工具 | VueUse |
 
+### 跨端能力
+
+| 平台 | 技术 | 说明 |
+|------|------|------|
+| iOS / Android | Capacitor 8 | 原生移动应用，支持设备 API 访问 |
+| Windows / macOS / Linux | Electron 36 | 跨平台桌面应用 |
+| PWA | vite-plugin-pwa | 渐进式 Web 应用，支持离线访问 |
+
 ### 开发工具
 
 | 类别 | 技术 |
@@ -122,6 +130,18 @@ pnpm build                          # 构建所有应用
 pnpm --filter @my-app/backend build # 构建后端
 pnpm --filter @my-app/frontend build # 构建前端
 
+# 跨端开发（在 frontend 目录下执行）
+pnpm cap:sync                       # 同步 Web 资源到原生项目
+pnpm cap:open:ios                   # 打开 Xcode
+pnpm cap:open:android               # 打开 Android Studio
+pnpm cap:run:ios                    # 运行 iOS 应用
+pnpm cap:run:android                # 运行 Android 应用
+pnpm electron:dev                   # 启动 Electron 开发模式
+pnpm electron:build                 # 构建所有平台桌面应用
+pnpm electron:build:mac             # 构建 macOS 应用
+pnpm electron:build:win             # 构建 Windows 应用
+pnpm electron:build:linux           # 构建 Linux 应用
+
 # Docker
 docker compose up postgres redis -d # 启动数据库服务
 docker compose up -d                # 启动所有服务
@@ -151,19 +171,26 @@ apps/backend/src/
 ### 前端关键目录
 
 ```
-apps/frontend/src/
-├── api/               # API 请求封装
-├── components/        # 组件
-│   └── ui/            # shadcn-vue UI 基础组件
-├── composables/       # 组合式函数
-├── i18n/              # 国际化配置
-├── lib/               # 工具库（cn() 等）
-├── router/            # 路由配置
-├── stores/            # Pinia 状态管理
-├── styles/            # 样式文件
-├── views/             # 页面组件
-├── App.vue            # 根组件
-└── main.ts            # 应用入口
+apps/frontend/
+├── src/
+│   ├── api/               # API 请求封装
+│   ├── components/        # 组件
+│   │   └── ui/            # shadcn-vue UI 基础组件
+│   ├── composables/       # 组合式函数
+│   ├── i18n/              # 国际化配置
+│   ├── lib/               # 工具库（cn() 等）
+│   ├── router/            # 路由配置
+│   ├── stores/            # Pinia 状态管理
+│   ├── styles/            # 样式文件
+│   ├── views/             # 页面组件
+│   ├── App.vue            # 根组件
+│   └── main.ts            # 应用入口
+├── electron/              # Electron 桌面端入口
+│   ├── main.ts            # 主进程
+│   └── preload.ts         # 预加载脚本
+├── android/               # Android 原生项目（Capacitor 生成）
+├── ios/                   # iOS 原生项目（Capacitor 生成）
+└── capacitor.config.ts    # Capacitor 配置
 ```
 
 ## 📐 代码规范
