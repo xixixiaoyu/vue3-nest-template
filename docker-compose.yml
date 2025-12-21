@@ -9,9 +9,9 @@ services:
     ports:
       - '5432:5432'
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-myapp}
+      POSTGRES_USER: $${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: $${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: $${POSTGRES_DB:-myapp}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -54,13 +54,13 @@ services:
     ports:
       - '3000:3000'
     environment:
-      NODE_ENV: ${NODE_ENV:-production}
+      NODE_ENV: $${NODE_ENV:-production}
       PORT: 3000
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-myapp}?schema=public
+      DATABASE_URL: postgresql://$${POSTGRES_USER:-postgres}:$${POSTGRES_PASSWORD:-postgres}@postgres:5432/$${POSTGRES_DB:-myapp}?schema=public
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      JWT_SECRET: $${JWT_SECRET}
+      JWT_EXPIRES_IN: $${JWT_EXPIRES_IN:-7d}
     depends_on:
       postgres:
         condition: service_healthy
