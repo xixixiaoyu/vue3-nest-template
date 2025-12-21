@@ -140,10 +140,97 @@ import { cn } from '@/lib/utils'
 3. 使用 `class-variance-authority` (cva) 定义变体
 4. 基于 Reka UI 原语组件构建，确保无障碍支持
 
+## Zod 类型共享 (Single Source of Truth)
+
+本项目采用 **Zod Schema 统一定义** 策略，确保前后端验证逻辑和类型完全一致。
+
+### 核心理念
+```
+共享包定义 Schema → 前端表单验证 + 后端 DTO 验证 → 类型自动推断
+```
+
+### 1. 在共享包中定义 Schema
+
+```typescript
+// packages/shared/src/schemas/auth.schema.ts
+import { z } from 'zod'
+
+// 可复用的字段规则
+export const emailSchema = z
+  .string({ required_error: '邮箱不能为空' })
+  .email('请输入有效的邮箱地址')
+  .toLowerCase()
+  .trim()
+
+export const passwordSchema = z
+  .string({ required_error: '密码不能为空' })
+  .min(6, '密码至少需要 6 个字符')
+
+// 组合成完整 Schema
+export const LoginSchema = z.object({
+  email: emailSchema,
+  password: passwordSchema,
+})
+
+// 从 Schema 推断 TypeScript 类型（无需手动定义 interface）
+export type LoginInput = z.infer<typeof LoginSchema>
+```
+
+### 2. 后端使用 nestjs-zod 包装 DTO
+
+```typescript
+// apps/backend/src/auth/auth.dto.ts
+import { createZodDto } from 'nestjs-zod'
+import { LoginSchema } from '@my-app/shared'
+
+// 自动支持 Swagger 文档生成 + 验证管道
+export class LoginDto extends createZodDto(LoginSchema) {}
+```
+
+### 3. 前端使用 @vee-validate/zod 表单验证
+
+```typescript
+// apps/frontend/src/components/LoginForm.vue
+import { useForm } from 'vee-validate'
+import { toTypedSchema } from '@vee-validate/zod'
+import { LoginSchema } from '@my-app/shared'
+
+const validationSchema = toTypedSchema(LoginSchema)
+const { handleSubmit, errors } = useForm({ validationSchema })
+```
+
+### 4. 直接使用推断类型
+
+```typescript
+// 任意前端/后端文件
+import type { LoginInput, User } from '@my-app/shared'
+
+const loginData: LoginInput = { email: 'test@example.com', password: '123456' }
+```
+
+### Schema 设计规范
+
+| 场景 | 命名约定 | 示例 |
+|------|----------|------|
+| 表单/请求体 | `XxxSchema` | `LoginSchema`, `CreateUserSchema` |
+| 响应数据 | `XxxResponseSchema` | `AuthResponseSchema` |
+| 可复用字段 | `xxxSchema` (小写) | `emailSchema`, `passwordSchema` |
+| 推断类型 | `XxxInput` / `Xxx` | `LoginInput`, `User` |
+
+### 共享包导出结构
+
+```typescript
+// packages/shared/src/index.ts
+export * from './schemas/auth.schema'  // Zod Schemas + 推断类型
+export * from './dto/common.dto'       // 通用响应接口
+export * from './utils/user.utils'     // 工具函数
+```
+
 ## 注意事项
 
 - 提交代码前须运行 `pnpm lint` 和 `pnpm format` 确保代码质量
 - 共享包 (@my-app/shared) 须配置 exports 字段，否则 Node.js 无法解析
 - 后端依赖 Redis，开发前须确保 Redis 服务已启动
-- 前后端均使用 Zod 进行数据校验，Schema 可在共享包中复用
-- 代码注释使用中文，类型定义优先使用 interface
+- 修改共享包后需重新构建：`pnpm --filter @my-app/shared build`
+- Zod 依赖仅在共享包中声明，前后端通过 workspace 引用自动获取
+- 代码注释使用中文，类型定义优先使用 interface（纯接口场景）或 z.infer（Schema 场景）
