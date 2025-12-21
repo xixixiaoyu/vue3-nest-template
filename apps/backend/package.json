@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@my-app/shared": "workspace:*",
-    "@nestjs/bull": "^11.0.4",
+    "@nestjs/bullmq": "^11.0.4",
     "@nestjs/cache-manager": "^3.0.1",
     "@nestjs/common": "^10.4.15",
     "@nestjs/config": "^3.3.0",
@@ -34,7 +34,7 @@
     "@nestjs/throttler": "^6.5.0",
     "@prisma/client": "^6.1.0",
     "bcrypt": "^5.1.1",
-    "bull": "^4.16.5",
+    "bullmq": "^5.66.2",
     "cache-manager": "^7.2.7",
     "cache-manager-ioredis-yet": "^2.1.2",
     "compression": "^1.8.1",

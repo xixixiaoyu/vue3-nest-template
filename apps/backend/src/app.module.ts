@@ -3,7 +3,7 @@ import { APP_GUARD } from '@nestjs/core'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 import { EventEmitterModule } from '@nestjs/event-emitter'
-import { BullModule } from '@nestjs/bull'
+import { BullModule } from '@nestjs/bullmq'
 import { LoggerModule } from 'nestjs-pino'
 import { PrismaModule } from './prisma/prisma.module'
 import { RedisModule } from './redis'
@@ -85,11 +85,11 @@ import { CsrfMiddleware } from './common'
       maxListeners: 20, // 最大监听器数量
       verboseMemoryLeak: true, // 内存泄漏详细提示
     }),
-    // Bull 队列模块（后台任务处理）
+    // BullMQ 队列模块（后台任务处理）
     BullModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        redis: {
+        connection: {
           host: config.get('REDIS_HOST', 'localhost'),
           port: config.get('REDIS_PORT', 6379),
           password: config.get('REDIS_PASSWORD', undefined),
