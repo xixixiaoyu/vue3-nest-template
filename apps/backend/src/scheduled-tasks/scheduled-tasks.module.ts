@@ -2,8 +2,9 @@ import { Module, OnModuleInit } from '@nestjs/common'
 import { BullModule, InjectQueue } from '@nestjs/bullmq'
 import { Queue } from 'bullmq'
 import { ScheduledTasksProcessor } from './scheduled-tasks.processor'
+import { SCHEDULED_TASKS_QUEUE } from './constants'
 
-export const SCHEDULED_TASKS_QUEUE = 'scheduled-tasks'
+export { SCHEDULED_TASKS_QUEUE }
 
 /**
  * 定时任务模块

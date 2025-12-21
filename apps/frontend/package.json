@@ -17,7 +17,8 @@
     "cap:open:android": "cap open android",
     "cap:run:ios": "cap run ios",
     "cap:run:android": "cap run android",
-    "cap:build": "pnpm build && cap sync"
+    "cap:build": "pnpm build && cap sync",
+    "pwa:generate-icons": "pwa-assets-generator"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",
@@ -48,6 +49,7 @@
     "@capacitor/cli": "^8.0.0",
     "@types/lodash-es": "^4.17.12",
     "@types/node": "^22.10.2",
+    "@vite-pwa/assets-generator": "^1.0.2",
     "@vitejs/plugin-vue": "^5.2.1",
     "@vue/test-utils": "^2.4.6",
     "autoprefixer": "^10.4.20",
@@ -60,6 +62,7 @@
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.1",
     "vite": "^6.0.5",
+    "vite-plugin-pwa": "^1.2.0",
     "vue-tsc": "^2.2.0"
   }
 }

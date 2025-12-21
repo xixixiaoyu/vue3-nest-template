@@ -1,7 +1,7 @@
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq'
 import { Logger } from '@nestjs/common'
 import { Job } from 'bullmq'
-import { SCHEDULED_TASKS_QUEUE } from './scheduled-tasks.module'
+import { SCHEDULED_TASKS_QUEUE } from './constants'
 
 interface ScheduledJobData {
   type: string
