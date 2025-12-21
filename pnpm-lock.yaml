@@ -170,9 +170,6 @@ importers:
       xss:
         specifier: ^1.0.15
         version: 1.0.15
-      zod:
-        specifier: ^3.24.1
-        version: 3.25.76
     devDependencies:
       '@nestjs/cli':
         specifier: ^10.4.9
@@ -285,9 +282,6 @@ importers:
       vue-router:
         specifier: ^4.5.0
         version: 4.6.4(vue@3.5.26(typescript@5.9.3))
-      zod:
-        specifier: ^3.24.1
-        version: 3.25.76
     devDependencies:
       '@types/lodash-es':
         specifier: ^4.17.12
