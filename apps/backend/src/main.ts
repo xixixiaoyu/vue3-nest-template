@@ -1,19 +1,22 @@
 import { NestFactory } from '@nestjs/core'
-import { Logger } from '@nestjs/common'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
 import { ZodValidationPipe, cleanupOpenApiDoc } from 'nestjs-zod'
+import { Logger } from 'nestjs-pino'
 import helmet from 'helmet'
 import cookieParser from 'cookie-parser'
 import compression from 'compression'
 import { AppModule } from './app.module'
-import { AllExceptionsFilter, LoggingInterceptor, SanitizeInterceptor } from './common'
+import { AllExceptionsFilter, SanitizeInterceptor } from './common'
 
 /**
  * 应用程序启动入口
  */
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule)
-  const logger = new Logger('Bootstrap')
+  const app = await NestFactory.create(AppModule, { bufferLogs: true })
+  // 使用 Pino 作为全局日志器
+  const logger = app.get(Logger)
+  app.useLogger(logger)
+  app.flushLogs()
 
   // 设置全局路由前缀
   app.setGlobalPrefix('api')
@@ -65,9 +68,6 @@ async function bootstrap() {
   // 全局异常过滤器
   app.useGlobalFilters(new AllExceptionsFilter())
 
-  // 全局日志拦截器
-  app.useGlobalInterceptors(new LoggingInterceptor())
-
   // 全局 XSS 清理拦截器（输入数据清理）
   app.useGlobalInterceptors(new SanitizeInterceptor())
 
@@ -81,13 +81,13 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig)
   // 使用 cleanupOpenApiDoc 处理 Zod Schema 生成的 OpenAPI 文档
   SwaggerModule.setup('api/docs', app, cleanupOpenApiDoc(document))
-  logger.log('🔒 安全中间件已启用: Helmet, 速率限制, XSS 防护, Gzip 压缩')
-  logger.log('📚 Swagger 文档: http://localhost:' + (process.env.PORT || 3000) + '/api/docs')
+  logger.log('🔒 安全中间件已启用: Helmet, 速率限制, XSS 防护, Gzip 压缩', 'Bootstrap')
+  logger.log(`📚 Swagger 文档: http://localhost:${process.env.PORT || 3000}/api/docs`, 'Bootstrap')
 
   const port = process.env.PORT || 3000
   await app.listen(port)
 
-  logger.log(`🚀 服务已启动: http://localhost:${port}`)
+  logger.log(`🚀 服务已启动: http://localhost:${port}`, 'Bootstrap')
 }
 
 bootstrap()

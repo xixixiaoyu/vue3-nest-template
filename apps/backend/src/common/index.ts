@@ -3,7 +3,6 @@ export * from './filters/all-exceptions.filter'
 
 // 拦截器
 export * from './interceptors/transform.interceptor'
-export * from './interceptors/logging.interceptor'
 export * from './interceptors/sanitize.interceptor'
 
 // 中间件

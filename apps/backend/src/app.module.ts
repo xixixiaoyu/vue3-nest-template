@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config'
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 import { EventEmitterModule } from '@nestjs/event-emitter'
 import { BullModule } from '@nestjs/bull'
+import { LoggerModule } from 'nestjs-pino'
 import { PrismaModule } from './prisma/prisma.module'
 import { UsersModule } from './users/users.module'
 import { HealthModule } from './health/health.module'
@@ -19,6 +20,62 @@ import { CsrfMiddleware } from './common'
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env', '../../.env'],
+    }),
+    // Pino 日志模块
+    LoggerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const isProduction = config.get('NODE_ENV') === 'production'
+        return {
+          pinoHttp: {
+            level: config.get('LOG_LEVEL', isProduction ? 'info' : 'debug'),
+            // 生产环境使用 JSON 格式，开发环境使用 pino-pretty
+            transport: isProduction
+              ? undefined
+              : {
+                  target: 'pino-pretty',
+                  options: {
+                    colorize: true,
+                    singleLine: false,
+                    translateTime: 'SYS:yyyy-mm-dd HH:MM:ss.l',
+                    ignore: 'pid,hostname',
+                  },
+                },
+            // 自定义请求日志格式
+            customProps: () => ({ context: 'HTTP' }),
+            // 自定义日志级别（根据状态码）
+            customLogLevel: (req, res, err) => {
+              if (res.statusCode >= 500 || err) return 'error'
+              if (res.statusCode >= 400) return 'warn'
+              return 'info'
+            },
+            // 自定义成功消息格式
+            customSuccessMessage: (req, res) => {
+              return `${req.method} ${req.url} ${res.statusCode}`
+            },
+            // 自定义错误消息格式
+            customErrorMessage: (req, res, err) => {
+              return `${req.method} ${req.url} ${res.statusCode} - ${err.message}`
+            },
+            // 序列化器配置
+            serializers: {
+              req: (req) => ({
+                method: req.method,
+                url: req.url,
+                query: req.query,
+                params: req.params,
+              }),
+              res: (res) => ({
+                statusCode: res.statusCode,
+              }),
+            },
+            // 排除健康检查端点的日志
+            autoLogging: {
+              ignore: (req) => req.url?.includes('/health') ?? false,
+            },
+          },
+        }
+      },
     }),
     // 事件发射器模块（应用内事件驱动）
     EventEmitterModule.forRoot({
