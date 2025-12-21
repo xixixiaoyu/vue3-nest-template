@@ -4,6 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
 import { ZodValidationPipe, cleanupOpenApiDoc } from 'nestjs-zod'
 import helmet from 'helmet'
 import cookieParser from 'cookie-parser'
+import compression from 'compression'
 import { AppModule } from './app.module'
 import { AllExceptionsFilter, LoggingInterceptor, SanitizeInterceptor } from './common'
 
@@ -35,6 +36,21 @@ async function bootstrap() {
   // Cookie 解析器（CSRF 保护需要）
   app.use(cookieParser())
 
+  // 响应压缩中间件（提升传输效率）
+  app.use(
+    compression({
+      threshold: 1024, // 只压缩大于 1KB 的响应
+      level: 6, // 压缩级别（1-9），6 为平衡性能与压缩率
+      filter: (req, res) => {
+        // 不压缩 SSE 和 WebSocket 响应
+        if (req.headers['accept'] === 'text/event-stream') {
+          return false
+        }
+        return compression.filter(req, res)
+      },
+    }),
+  )
+
   // 启用 CORS（通过代理访问）
   app.enableCors({
     origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173'],
@@ -65,7 +81,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig)
   // 使用 cleanupOpenApiDoc 处理 Zod Schema 生成的 OpenAPI 文档
   SwaggerModule.setup('api/docs', app, cleanupOpenApiDoc(document))
-  logger.log('🔒 安全中间件已启用: Helmet, 速率限制, XSS 防护')
+  logger.log('🔒 安全中间件已启用: Helmet, 速率限制, XSS 防护, Gzip 压缩')
   logger.log('📚 Swagger 文档: http://localhost:' + (process.env.PORT || 3000) + '/api/docs')
 
   const port = process.env.PORT || 3000

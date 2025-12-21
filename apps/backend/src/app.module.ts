@@ -2,6 +2,8 @@ import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common'
 import { APP_GUARD } from '@nestjs/core'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
+import { EventEmitterModule } from '@nestjs/event-emitter'
+import { BullModule } from '@nestjs/bull'
 import { PrismaModule } from './prisma/prisma.module'
 import { UsersModule } from './users/users.module'
 import { HealthModule } from './health/health.module'
@@ -17,6 +19,33 @@ import { CsrfMiddleware } from './common'
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env', '../../.env'],
+    }),
+    // 事件发射器模块（应用内事件驱动）
+    EventEmitterModule.forRoot({
+      wildcard: true, // 支持通配符事件
+      delimiter: '.', // 事件名称分隔符
+      maxListeners: 20, // 最大监听器数量
+      verboseMemoryLeak: true, // 内存泄漏详细提示
+    }),
+    // Bull 队列模块（后台任务处理）
+    BullModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        redis: {
+          host: config.get('REDIS_HOST', 'localhost'),
+          port: config.get('REDIS_PORT', 6379),
+          password: config.get('REDIS_PASSWORD', undefined),
+        },
+        defaultJobOptions: {
+          removeOnComplete: true, // 完成后自动删除任务
+          removeOnFail: false, // 失败后保留任务用于排查
+          attempts: 3, // 失败重试次数
+          backoff: {
+            type: 'exponential', // 指数退避策略
+            delay: 1000, // 初始延迟 1 秒
+          },
+        },
+      }),
     }),
     // 速率限制模块（防止暴力破解）
     ThrottlerModule.forRootAsync({

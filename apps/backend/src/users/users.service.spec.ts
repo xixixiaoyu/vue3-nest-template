@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { UsersService } from './users.service'
 import { NotFoundException, ConflictException } from '@nestjs/common'
 
+import { PrismaService } from '../prisma/prisma.service'
+
 // Mock PrismaService
 const mockPrismaService = {
   user: {
@@ -21,7 +23,7 @@ describe('UsersService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    service = new UsersService(mockPrismaService as unknown as Parameters<typeof UsersService>[0])
+    service = new UsersService(mockPrismaService as unknown as PrismaService)
   })
 
   describe('findAll', () => {
