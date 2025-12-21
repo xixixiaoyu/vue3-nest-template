@@ -14,7 +14,18 @@
 - [apps/backend/vitest.config.ts](file://apps/backend/vitest.config.ts)
 - [apps/frontend/vitest.config.ts](file://apps/frontend/vitest.config.ts)
 - [tsconfig.base.json](file://tsconfig.base.json)
+- [apps/frontend/vite.config.ts](file://apps/frontend/vite.config.ts)
+- [apps/frontend/.env.production](file://apps/frontend/.env.production)
+- [README.md](file://README.md)
 </cite>
+
+## 更新摘要
+**已做更改**  
+- 新增 GitHub Actions 部署工作流配置说明
+- 添加 GitHub Pages 自动化发布流程
+- 引入动态构建路径配置（getBase 函数）的实现与用途
+- 增加生产环境变量管理（.env.production）说明
+- 补充 README 状态徽章的配置与作用
 
 ## 目录
 1. [简介](#简介)
@@ -28,7 +39,7 @@
 9. [结论](#结论)
 
 ## 简介
-本文档旨在设计并文档化一个基于 Turbo 的高效 CI/CD 流水线，利用 pnpm workspaces 进行依赖管理，并集成前端与后端的测试策略。通过 turbo.json 中的 pipeline 配置实现增量构建和缓存，从而加速测试和部署流程。文档提供完整的 CI 脚本示例（如 GitHub Actions 或 GitLab CI），涵盖代码检查、单元测试、构建和部署阶段，并说明缓存策略、并行执行和失败回滚的最佳实践。
+本文档旨在设计并文档化一个基于 Turbo 的高效 CI/CD 流水线，利用 pnpm workspaces 进行依赖管理，并集成前端与后端的测试策略。通过 turbo.json 中的 pipeline 配置实现增量构建和缓存，从而加速测试和部署流程。文档提供完整的 CI 脚本示例（如 GitHub Actions 或 GitLab CI），涵盖代码检查、单元测试、构建和部署阶段，并说明缓存策略、并行执行和失败回滚的最佳实践。本次更新新增了 GitHub Actions 部署工作流、GitHub Pages 自动化发布、动态构建路径配置（getBase函数）、环境变量管理（.env.production）以及 README 状态徽章相关内容。
 
 ## 项目结构
 本项目采用 monorepo 架构，使用 pnpm workspaces 管理多个子包。主要包含两个应用：NestJS 后端（`apps/backend`）和 Vue 前端（`apps/frontend`），以及一个共享库（`packages/shared`）。Turbo 用于任务编排，Docker 和 docker-compose 用于容器化部署。
@@ -102,10 +113,6 @@ Build --> Deploy
 Backend --> DB
 Backend --> Cache
 Frontend --> Backend
-style Lint fill:#4CAF50,stroke:#388E3C
-style Test fill:#2196F3,stroke:#1976D2
-style Build fill:#FF9800,stroke:#F57C00
-style Deploy fill:#F44336,stroke:#D32F2F
 ```
 
 **Diagram sources**  
@@ -146,8 +153,6 @@ Discover --> Execute["执行测试用例"]
 Execute --> Coverage["生成覆盖率报告 (text, json, html)"]
 Coverage --> Report["输出结果"]
 Report --> End["结束"]
-style Start fill:#2196F3,stroke:#1976D2
-style End fill:#2196F3,stroke:#1976D2
 ```
 
 **Diagram sources**  
@@ -188,6 +193,48 @@ jobs:
 - [package.json](file://package.json)
 - [docker-compose.yml](file://docker-compose.yml)
 
+### GitHub Pages 自动化发布
+前端应用支持部署到 GitHub Pages，通过 `vite.config.ts` 中的 `getBase` 函数动态设置构建路径。当 `NODE_ENV=production` 时，`base` 路径自动设置为 `/vue3-nest-template/`，适配 GitHub Pages 的子路径部署需求。
+
+```typescript
+const getBase = () => {
+  if (isElectron) return './'
+  if (process.env.NODE_ENV === 'production') return '/vue3-nest-template/'
+  return './'
+}
+```
+
+**Section sources**  
+- [apps/frontend/vite.config.ts](file://apps/frontend/vite.config.ts#L11-L17)
+
+### 环境变量管理
+前端生产环境变量通过 `.env.production` 文件进行管理，定义 API 基础 URL 等关键配置。该文件中的变量在构建时注入到应用中，并通过 `ImportMetaEnv` 类型定义确保类型安全。
+
+```env
+VITE_API_BASE_URL=https://api.yourdomain.com
+```
+
+```typescript
+interface ImportMetaEnv {
+  readonly VITE_API_BASE_URL: string
+}
+```
+
+**Section sources**  
+- [apps/frontend/.env.production](file://apps/frontend/.env.production)
+- [apps/frontend/vite-env.d.ts](file://apps/frontend/vite-env.d.ts)
+
+### README 状态徽章
+项目 README.md 文件包含 CI/CD 状态徽章，用于可视化展示工作流运行状态。徽章链接指向 GitHub Actions 的具体工作流，便于快速查看构建和部署结果。
+
+```markdown
+[![CI](https://github.com/{owner}/vue3-nest-template/actions/workflows/ci.yml/badge.svg)](https://github.com/{owner}/vue3-nest-template/actions/workflows/ci.yml)
+[![Deploy](https://github.com/{owner}/vue3-nest-template/actions/workflows/deploy.yml/badge.svg)](https://github.com/{owner}/vue3-nest-template/actions/workflows/deploy.yml)
+```
+
+**Section sources**  
+- [README.md](file://README.md#L3-L5)
+
 ## 依赖分析
 项目依赖通过 pnpm workspaces 统一管理，Turbo 根据 `package.json` 中的依赖关系构建任务图。`^` 前缀表示跨包依赖，确保任务按拓扑顺序执行。Docker 多阶段构建进一步优化依赖安装与镜像大小。
 
@@ -198,7 +245,6 @@ A --> C["frontend: build"]
 A --> D["shared: build"]
 B --> D
 C --> D
-style A fill:#9C27B0,stroke:#7B1FA2
 ```
 
 **Diagram sources**  
