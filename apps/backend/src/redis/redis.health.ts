@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common'
 import { HealthIndicator, HealthIndicatorResult, HealthCheckError } from '@nestjs/terminus'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
-import { Cache } from 'cache-manager'
+import type { Cache } from 'cache-manager'
 
 /**
  * Redis 健康检查指示器

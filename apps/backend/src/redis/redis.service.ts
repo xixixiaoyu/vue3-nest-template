@@ -1,6 +1,6 @@
 import { Injectable, Inject, Logger, OnModuleDestroy } from '@nestjs/common'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
-import { Cache } from 'cache-manager'
+import type { Cache } from 'cache-manager'
 
 /**
  * 缓存键前缀枚举
