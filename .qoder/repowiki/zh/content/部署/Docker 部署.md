@@ -9,11 +9,20 @@
 - [.env.example](file://.env.example)
 - [apps/frontend/nginx.conf](file://apps/frontend/nginx.conf)
 - [apps/backend/src/main.ts](file://apps/backend/src/main.ts)
-- [apps/frontend/src/main.ts](file://apps/frontend/src/main.ts)
+- [apps/backend/src/redis/redis.module.ts](file://apps/backend/src/redis/redis.module.ts)
+- [apps/backend/src/mail/mail.module.ts](file://apps/backend/src/mail/mail.module.ts)
+- [apps/backend/src/upload/storage.service.ts](file://apps/backend/src/upload/storage.service.ts)
 - [package.json](file://package.json)
 - [turbo.json](file://turbo.json)
 - [pnpm-workspace.yaml](file://pnpm-workspace.yaml)
 </cite>
+
+## 更新摘要
+**已做更改**
+- 更新了环境变量注入语法，从 $${VAR} 统一改为 ${VAR}
+- 新增 Redis、邮件、S3 存储、速率限制等环境变量的详细说明
+- 补充了新环境变量在后端模块中的实际应用位置
+- 更新了附录中的环境变量示例文件说明
 
 ## 目录
 1. [简介](#简介)
@@ -295,6 +304,7 @@ NET --> RD
   - 确认 .env 或 .env.docker 已正确加载（compose 会读取 .env）
   - 在 docker-compose 中显式声明 environment 字段以覆盖默认值
   - 检查变量拼写与大小写
+  - **注意**：环境变量注入语法已从 $${VAR} 更新为 ${VAR}，请确保使用新语法
 - 健康检查失败
   - 查看容器日志（docker compose logs -f）
   - 确认端口映射与监听地址一致
@@ -332,6 +342,12 @@ NET --> RD
 - [package.json](file://package.json#L1-L51)
 
 ### 环境变量与覆盖文件
+- **新环境变量说明**：
+  - **Redis 配置**：REDIS_PASSWORD、REDIS_DB、REDIS_KEY_PREFIX、REDIS_DEFAULT_TTL
+  - **邮件配置**：MAIL_HOST、MAIL_PORT、MAIL_SECURE、MAIL_USER、MAIL_PASSWORD、MAIL_FROM
+  - **S3 存储配置**：S3_BUCKET、S3_REGION、S3_ENDPOINT、S3_ACCESS_KEY_ID、S3_SECRET_ACCESS_KEY
+  - **速率限制配置**：THROTTLE_SHORT_TTL、THROTTLE_SHORT_LIMIT、THROTTLE_MEDIUM_TTL、THROTTLE_MEDIUM_LIMIT、THROTTLE_LONG_TTL、THROTTLE_LONG_LIMIT
+  - **文件上传限制**：UPLOAD_MAX_SIZE、UPLOAD_MAX_FILES
 - .env.docker.example
   - 包含 NODE_ENV、POSTGRES_*、JWT_* 等关键变量示例
 - .env.example
@@ -340,9 +356,12 @@ NET --> RD
 - 建议在不同环境使用不同的 .env 文件或通过 CI/CD 注入环境变量
 
 章节来源
-- [.env.docker.example](file://.env.docker.example#L1-L23)
-- [.env.example](file://.env.example#L1-L53)
+- [.env.docker.example](file://.env.docker.example#L1-L72)
+- [.env.example](file://.env.example#L1-L51)
 - [docker-compose.yml](file://docker-compose.yml#L1-L108)
+- [apps/backend/src/redis/redis.module.ts](file://apps/backend/src/redis/redis.module.ts#L1-L84)
+- [apps/backend/src/mail/mail.module.ts](file://apps/backend/src/mail/mail.module.ts#L1-L34)
+- [apps/backend/src/upload/storage.service.ts](file://apps/backend/src/upload/storage.service.ts#L1-L124)
 
 ### 端口与健康检查对照表
 - 后端（backend）
