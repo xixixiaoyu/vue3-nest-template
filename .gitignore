@@ -42,3 +42,10 @@ prisma/*.db-journal
 *.tmp
 *.temp
 .cache
+
+# Capacitor
+apps/frontend/ios/App/App/public
+apps/frontend/ios/App/Pods
+apps/frontend/android/app/src/main/assets/public
+apps/frontend/android/.gradle
+apps/frontend/android/app/build

@@ -3,6 +3,8 @@ import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
 
 export default defineConfig({
+  // Capacitor 需要相对路径才能在原生应用中正确加载资源
+  base: './',
   plugins: [vue()],
   resolve: {
     alias: {
