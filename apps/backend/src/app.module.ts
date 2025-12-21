@@ -6,6 +6,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter'
 import { BullModule } from '@nestjs/bull'
 import { LoggerModule } from 'nestjs-pino'
 import { PrismaModule } from './prisma/prisma.module'
+import { RedisModule } from './redis'
 import { UsersModule } from './users/users.module'
 import { HealthModule } from './health/health.module'
 import { AuthModule } from './auth/auth.module'
@@ -128,6 +129,7 @@ import { CsrfMiddleware } from './common'
       }),
     }),
     PrismaModule, // 数据库模块
+    RedisModule, // Redis 缓存模块
     HealthModule, // 健康检查模块
     AuthModule, // 认证模块
     UsersModule, // 用户模块

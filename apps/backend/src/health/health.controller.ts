@@ -7,6 +7,7 @@ import {
   DiskHealthIndicator,
 } from '@nestjs/terminus'
 import { PrismaHealthIndicator } from './prisma.health'
+import { RedisHealthIndicator } from '../redis'
 
 /**
  * 健康检查控制器
@@ -18,6 +19,7 @@ export class HealthController {
   constructor(
     private health: HealthCheckService,
     private prismaHealth: PrismaHealthIndicator,
+    private redisHealth: RedisHealthIndicator,
     private memory: MemoryHealthIndicator,
     private disk: DiskHealthIndicator,
   ) {}
@@ -33,6 +35,8 @@ export class HealthController {
     return this.health.check([
       // 数据库健康检查
       () => this.prismaHealth.isHealthy('database'),
+      // Redis 健康检查
+      () => this.redisHealth.isHealthy('redis'),
       // 内存堆使用检查（阈值 200MB）
       () => this.memory.checkHeap('memory_heap', 200 * 1024 * 1024),
       // 内存 RSS 检查（阈值 300MB）
@@ -64,6 +68,9 @@ export class HealthController {
   @HealthCheck()
   @ApiOperation({ summary: '就绪探针' })
   readiness() {
-    return this.health.check([() => this.prismaHealth.isHealthy('database')])
+    return this.health.check([
+      () => this.prismaHealth.isHealthy('database'),
+      () => this.redisHealth.isHealthy('redis'),
+    ])
   }
 }
