@@ -12,7 +12,7 @@ const getBase = () => {
   // Electron 模式使用相对路径
   if (isElectron) return './'
   // 生产环境部署到 GitHub Pages
-  if (process.env.NODE_ENV === 'production') return '/vue3-nest-template/'
+  if (process.env.NODE_ENV === 'production') return '/nest-vue-template/'
   // Capacitor 需要相对路径
   return './'
 }
