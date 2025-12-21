@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
-import * as bcrypt from 'bcrypt'
+import { AuthService } from '../auth/auth.service'
 import type { User, RegisterInput } from '@my-app/shared'
+import { formatUser, formatUsers } from '@my-app/shared'
 
 /**
  * 用户服务
@@ -9,28 +10,17 @@ import type { User, RegisterInput } from '@my-app/shared'
  */
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly authService: AuthService,
+  ) {}
 
   /**
    * 获取所有用户
    */
   async findAll(): Promise<User[]> {
-    const users = await this.prisma.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        avatar: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    })
-
-    return users.map((user) => ({
-      ...user,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
-    }))
+    const users = await this.prisma.user.findMany()
+    return formatUsers(users)
   }
 
   /**
@@ -39,32 +29,19 @@ export class UsersService {
   async findOne(id: number): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        avatar: true,
-        createdAt: true,
-        updatedAt: true,
-      },
     })
 
     if (!user) {
       throw new NotFoundException(`用户 ID ${id} 不存在`)
     }
 
-    return {
-      ...user,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
-    }
+    return formatUser(user)
   }
 
   /**
    * 创建新用户
    */
   async create(createUserDto: RegisterInput): Promise<User> {
-    // 检查邮箱是否已存在
     const existingUser = await this.prisma.user.findUnique({
       where: { email: createUserDto.email },
     })
@@ -73,8 +50,7 @@ export class UsersService {
       throw new ConflictException('邮箱已被注册')
     }
 
-    // 加密密码
-    const hashedPassword = await bcrypt.hash(createUserDto.password, 10)
+    const hashedPassword = await this.authService.hashPassword(createUserDto.password)
 
     const user = await this.prisma.user.create({
       data: {
@@ -82,20 +58,8 @@ export class UsersService {
         name: createUserDto.name,
         password: hashedPassword,
       },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        avatar: true,
-        createdAt: true,
-        updatedAt: true,
-      },
     })
 
-    return {
-      ...user,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
-    }
+    return formatUser(user)
   }
 }

@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Param, ParseIntPipe } from '@nestjs/common
 import { ApiTags, ApiOperation } from '@nestjs/swagger'
 import { UsersService } from './users.service'
 import { RegisterDto } from '../auth/auth.dto'
-import type { User, ApiResponse } from '@my-app/shared'
+import type { User } from '@my-app/shared'
 
 /**
  * 用户控制器
@@ -18,13 +18,8 @@ export class UsersController {
    */
   @Get()
   @ApiOperation({ summary: '获取所有用户' })
-  async findAll(): Promise<ApiResponse<User[]>> {
-    const users = await this.usersService.findAll()
-    return {
-      success: true,
-      data: users,
-      timestamp: new Date().toISOString(),
-    }
+  async findAll(): Promise<User[]> {
+    return this.usersService.findAll()
   }
 
   /**
@@ -32,13 +27,8 @@ export class UsersController {
    */
   @Get(':id')
   @ApiOperation({ summary: '获取单个用户' })
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<ApiResponse<User>> {
-    const user = await this.usersService.findOne(id)
-    return {
-      success: true,
-      data: user,
-      timestamp: new Date().toISOString(),
-    }
+  async findOne(@Param('id', ParseIntPipe) id: number): Promise<User> {
+    return this.usersService.findOne(id)
   }
 
   /**
@@ -46,13 +36,7 @@ export class UsersController {
    */
   @Post()
   @ApiOperation({ summary: '创建新用户' })
-  async create(@Body() createUserDto: RegisterDto): Promise<ApiResponse<User>> {
-    const user = await this.usersService.create(createUserDto)
-    return {
-      success: true,
-      data: user,
-      message: '用户创建成功',
-      timestamp: new Date().toISOString(),
-    }
+  async create(@Body() createUserDto: RegisterDto): Promise<User> {
+    return this.usersService.create(createUserDto)
   }
 }

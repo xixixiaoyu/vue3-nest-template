@@ -1,41 +1,42 @@
 import { z } from 'zod'
 
 /**
+ * 共享的邮箱验证规则
+ */
+export const emailSchema = z
+  .string({ required_error: '邮箱不能为空' })
+  .min(1, '邮箱不能为空')
+  .email('请输入有效的邮箱地址')
+  .toLowerCase()
+  .trim()
+
+/**
+ * 共享的密码基础验证规则
+ */
+export const passwordSchema = z
+  .string({ required_error: '密码不能为空' })
+  .min(6, '密码至少需要 6 个字符')
+  .max(100, '密码不能超过 100 个字符')
+
+/**
  * 登录表单验证 Schema
- * 作为前后端验证的单一数据源
  */
 export const LoginSchema = z.object({
-  email: z
-    .string({ required_error: '邮箱不能为空' })
-    .min(1, '邮箱不能为空')
-    .email('请输入有效的邮箱地址')
-    .toLowerCase() // 自动转换为小写
-    .trim(), // 去除前后空格
-  password: z
-    .string({ required_error: '密码不能为空' })
-    .min(6, '密码至少需要 6 个字符')
-    .max(100, '密码不能超过 100 个字符'),
+  email: emailSchema,
+  password: passwordSchema,
 })
 
 /**
  * 注册表单验证 Schema
  */
 export const RegisterSchema = z.object({
-  email: z
-    .string({ required_error: '邮箱不能为空' })
-    .min(1, '邮箱不能为空')
-    .email('请输入有效的邮箱地址')
-    .toLowerCase()
-    .trim(),
+  email: emailSchema,
   name: z
     .string({ required_error: '用户名不能为空' })
     .min(2, '用户名至少需要 2 个字符')
     .max(50, '用户名不能超过 50 个字符')
     .trim(),
-  password: z
-    .string({ required_error: '密码不能为空' })
-    .min(6, '密码至少需要 6 个字符')
-    .max(100, '密码不能超过 100 个字符')
+  password: passwordSchema
     .regex(/[A-Za-z]/, '密码必须包含至少一个字母')
     .regex(/[0-9]/, '密码必须包含至少一个数字'),
 })

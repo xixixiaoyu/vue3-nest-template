@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { UsersService } from './users.service'
 import { NotFoundException, ConflictException } from '@nestjs/common'
-
 import { PrismaService } from '../prisma/prisma.service'
+import { AuthService } from '../auth/auth.service'
 
 // Mock PrismaService
 const mockPrismaService = {
@@ -13,17 +13,20 @@ const mockPrismaService = {
   },
 }
 
-// Mock bcrypt
-vi.mock('bcrypt', () => ({
-  hash: vi.fn().mockResolvedValue('hashed_password'),
-}))
+// Mock AuthService
+const mockAuthService = {
+  hashPassword: vi.fn().mockResolvedValue('hashed_password'),
+}
 
 describe('UsersService', () => {
   let service: UsersService
 
   beforeEach(() => {
     vi.clearAllMocks()
-    service = new UsersService(mockPrismaService as unknown as PrismaService)
+    service = new UsersService(
+      mockPrismaService as unknown as PrismaService,
+      mockAuthService as unknown as AuthService,
+    )
   })
 
   describe('findAll', () => {

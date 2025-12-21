@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config'
 import { PrismaService } from '../prisma/prisma.service'
 import * as bcrypt from 'bcrypt'
 import type { LoginInput, User, AuthResponse } from '@my-app/shared'
+import { formatUser } from '@my-app/shared'
 
 interface JwtPayload {
   sub: number
@@ -49,14 +50,7 @@ export class AuthService {
       return null
     }
 
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      avatar: user.avatar,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
-    }
+    return formatUser(user)
   }
 
   /**
@@ -137,25 +131,13 @@ export class AuthService {
   async getUserById(userId: number): Promise<User | null> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        avatar: true,
-        createdAt: true,
-        updatedAt: true,
-      },
     })
 
     if (!user) {
       return null
     }
 
-    return {
-      ...user,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
-    }
+    return formatUser(user)
   }
 
   /**
