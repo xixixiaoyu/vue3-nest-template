@@ -48,15 +48,6 @@ nest-vue-template/
 - **测试**: Vitest
 - **Git Hooks**: Husky + lint-staged
 
-## 代码规范
-
-- 缩进: 2 空格
-- 引号: 单引号
-- 分号: 无
-- 优先使用 ES6+ 语法和 TypeScript 类型安全
-- 严禁使用 `any` 类型
-- 中文与英文/数字之间保持一个空格
-
 ## 常用命令
 
 ```bash
