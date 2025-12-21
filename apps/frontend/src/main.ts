@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
+import { VueQueryPlugin, QueryClient } from '@tanstack/vue-query'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { BarChart, LineChart, PieChart } from 'echarts/charts'
@@ -34,9 +35,20 @@ const app = createApp(App)
 const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)
 
+// 配置 Vue Query
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60, // 1 分钟
+      retry: 1,
+    },
+  },
+})
+
 app.use(pinia)
 app.use(router)
 app.use(i18n)
+app.use(VueQueryPlugin, { queryClient })
 
 // 全局注册 VChart 组件
 app.component('VChart', VChart)
