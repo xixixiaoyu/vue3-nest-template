@@ -1,5 +1,8 @@
 # NestJS + Vue 全栈应用模板
 
+[![CI](https://github.com/{owner}/vue3-nest-template/actions/workflows/ci.yml/badge.svg)](https://github.com/{owner}/vue3-nest-template/actions/workflows/ci.yml)
+[![Deploy](https://github.com/{owner}/vue3-nest-template/actions/workflows/deploy.yml/badge.svg)](https://github.com/{owner}/vue3-nest-template/actions/workflows/deploy.yml)
+
 基于 **NestJS + Vue 3** 的全栈应用模板，采用 **pnpm Monorepo** 架构，集成现代 Web 开发的最佳实践和工具链。
 
 ## 🏗️ 项目架构

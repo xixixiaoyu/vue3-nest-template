@@ -7,9 +7,18 @@ import { resolve } from 'path'
 
 const isElectron = process.env.ELECTRON === 'true'
 
+// 根据环境和构建目标设置 base 路径
+const getBase = () => {
+  // Electron 模式使用相对路径
+  if (isElectron) return './'
+  // 生产环境部署到 GitHub Pages
+  if (process.env.NODE_ENV === 'production') return '/vue3-nest-template/'
+  // Capacitor 需要相对路径
+  return './'
+}
+
 export default defineConfig({
-  // Capacitor 需要相对路径才能在原生应用中正确加载资源
-  base: './',
+  base: getBase(),
   plugins: [
     vue(),
     // Electron 插件（仅在 electron 模式下启用）
