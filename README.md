@@ -80,7 +80,7 @@ nest-vue-template/
 4. **启动数据库服务**
    ```bash
    # 使用 Docker 启动 PostgreSQL 和 Redis
-   docker-compose up postgres -d
+   docker compose up postgres redis -d
    ```
 
 5. **初始化数据库**
@@ -103,17 +103,17 @@ nest-vue-template/
 
 1. **构建并启动所有服务**
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 
 2. **查看服务状态**
    ```bash
-   docker-compose ps
+   docker compose ps
    ```
 
 3. **查看日志**
    ```bash
-   docker-compose logs -f
+   docker compose logs -f
    ```
 
 ## 📁 项目结构
@@ -273,12 +273,12 @@ S3_SECRET_ACCESS_KEY=your-secret-key
 
 1. **构建 Docker 镜像**
    ```bash
-   docker-compose build
+   docker compose build
    ```
 
 2. **启动生产服务**
    ```bash
-   docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
    ```
 
 ## 🤝 贡献指南
