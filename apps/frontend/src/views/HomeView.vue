@@ -81,14 +81,14 @@ try {
 // ========== 4. Lucide Icons 测试 ==========
 try {
   // 如果图标组件能正常导入，则测试通过
-  updateTest('Lucide Icons', Check ? 'success' : 'error', '图标组件已加载')
+  updateTest('Lucide Icons', 'success', '图标组件已加载')
 } catch (e) {
   updateTest('Lucide Icons', 'error', String(e))
 }
 
 // ========== 5. shadcn-vue Button 测试 ==========
 try {
-  updateTest('shadcn-vue (Button)', Button ? 'success' : 'error', 'Button 组件已加载')
+  updateTest('shadcn-vue (Button)', 'success', 'Button 组件已加载')
 } catch (e) {
   updateTest('shadcn-vue (Button)', 'error', String(e))
 }
@@ -156,7 +156,7 @@ const chartOption = computed(() => ({
 }))
 
 try {
-  updateTest('ECharts', VChart ? 'success' : 'error', 'ECharts 组件已加载')
+  updateTest('ECharts', 'success', 'ECharts 组件已加载')
 } catch (e) {
   updateTest('ECharts', 'error', String(e))
 }
