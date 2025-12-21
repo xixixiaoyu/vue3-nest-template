@@ -16,16 +16,6 @@ nest-vue-template/
 
 ## 技术栈
 
-### 后端 (NestJS 10)
-- **运行时**: Node.js 18+
-- **数据库**: PostgreSQL 16 + Prisma ORM
-- **缓存/队列**: Redis 7 + BullMQ
-- **认证**: JWT + Passport
-- **验证**: Zod + nestjs-zod
-- **日志**: nestjs-pino
-- **API 文档**: Swagger
-- **WebSocket**: Socket.IO
-
 ### 前端 (Vue 3)
 - **构建**: Vite
 - **路由**: Vue Router 4
@@ -37,6 +27,16 @@ nest-vue-template/
 - **图表**: ECharts + vue-echarts
 - **图标**: Lucide Vue
 - **工具**: VueUse
+
+### 后端 (NestJS 10)
+- **运行时**: Node.js 18+
+- **数据库**: PostgreSQL 16 + Prisma ORM
+- **缓存/队列**: Redis 7 + BullMQ
+- **认证**: JWT + Passport
+- **验证**: Zod + nestjs-zod
+- **日志**: nestjs-pino
+- **API 文档**: Swagger
+- **WebSocket**: Socket.IO
 
 ### 开发工具
 - **包管理**: pnpm 9+ (workspace)
