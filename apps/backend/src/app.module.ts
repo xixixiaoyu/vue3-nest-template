@@ -10,6 +10,10 @@ import { RedisModule } from './redis'
 import { UsersModule } from './users/users.module'
 import { HealthModule } from './health/health.module'
 import { AuthModule } from './auth/auth.module'
+import { MailModule } from './mail'
+import { EventsModule } from './events'
+import { UploadModule } from './upload'
+import { ScheduledTasksModule } from './scheduled-tasks'
 import { CsrfMiddleware } from './common'
 
 /**
@@ -133,6 +137,10 @@ import { CsrfMiddleware } from './common'
     HealthModule, // 健康检查模块
     AuthModule, // 认证模块
     UsersModule, // 用户模块
+    MailModule, // 邮件模块
+    EventsModule, // WebSocket 模块
+    UploadModule, // 文件上传模块
+    ScheduledTasksModule, // 定时任务模块
   ],
   providers: [
     // 全局速率限制守卫
