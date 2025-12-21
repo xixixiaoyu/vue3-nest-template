@@ -1,4 +1,5 @@
-import { contextBridge, ipcRenderer } from 'electron'
+/* eslint-disable @typescript-eslint/no-require-imports */
+const { contextBridge, ipcRenderer } = require('electron')
 
 // 暴露安全的 API 到渲染进程
 contextBridge.exposeInMainWorld('electronAPI', {
