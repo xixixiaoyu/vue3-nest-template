@@ -49,3 +49,7 @@ apps/frontend/ios/App/Pods
 apps/frontend/android/app/src/main/assets/public
 apps/frontend/android/.gradle
 apps/frontend/android/app/build
+
+# Electron
+apps/frontend/dist-electron
+apps/frontend/release
