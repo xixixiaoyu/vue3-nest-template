@@ -41,8 +41,9 @@ RUN pnpm --filter @my-app/frontend build
 # ============================================
 FROM nginx:alpine AS production
 
-# 移除默认 nginx 配置
-RUN rm /etc/nginx/conf.d/default.conf
+# 移除默认 nginx 配置和 IPv6 自动配置脚本（解决只读文件系统报错）
+RUN rm /etc/nginx/conf.d/default.conf && \
+    rm -f /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
 
 # 复制自定义 nginx 主配置（适配非 root 用户）
 COPY apps/frontend/nginx.main.conf /etc/nginx/nginx.conf
