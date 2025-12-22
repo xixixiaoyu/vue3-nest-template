@@ -81,7 +81,6 @@ npx shadcn-vue@latest add <component-name>  # 在 frontend 目录下执行
 
 ## 注意事项
 
-- **代码规范**: 2 空格缩进、单引号、无分号，提交前 `pnpm lint && pnpm format`
 - **共享包**: 修改后需 `pnpm --filter @my-app/shared build`
 - **依赖**: 前端 `zod` 必须显式声明，否则 Docker 构建失败
 - **服务**: 开发前启动 `docker compose up postgres redis -d`，首次运行 `pnpm db:push`
