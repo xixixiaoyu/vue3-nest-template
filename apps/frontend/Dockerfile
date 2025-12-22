@@ -3,6 +3,9 @@
 # ============================================
 FROM node:20-alpine AS base
 
+# Use China mirror for corepack
+ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
+
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /app
 

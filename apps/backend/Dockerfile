@@ -3,6 +3,10 @@
 # ============================================
 FROM node:20-alpine AS base
 
+# Use China mirrors to avoid network issues
+ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
+ENV PRISMA_ENGINES_MIRROR=https://registry.npmmirror.com/-/binary/prisma
+
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /app
 
@@ -41,6 +45,9 @@ FROM node:20-alpine AS production
 # Install build tools for native modules (bcrypt etc.)
 RUN apk add --no-cache python3 make g++
 
+# Use China mirror for corepack
+ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
+
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 
 # Create non-root user for security
@@ -57,14 +64,15 @@ COPY packages/shared/package.json ./packages/shared/
 # Install production dependencies only (ignore scripts to skip husky etc.)
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
-# Copy Prisma schema for runtime reference
+# Copy Prisma schema and generate client in production
+# prisma is now a production dependency, use pnpm exec to run it
 COPY apps/backend/prisma ./apps/backend/prisma
+ENV PRISMA_ENGINES_MIRROR=https://registry.npmmirror.com/-/binary/prisma
+RUN pnpm --filter @my-app/backend exec prisma generate
 
-# Copy built application and generated Prisma Client from builder
+# Copy built application from builder
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 COPY --from=builder /app/packages/shared ./packages/shared
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
 
 # Change ownership to non-root user
 RUN chown -R nestjs:nodejs /app
