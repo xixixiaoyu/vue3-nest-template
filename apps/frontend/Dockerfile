@@ -3,7 +3,12 @@
 # ============================================
 FROM node:20-alpine AS base
 
+# Configure China mirrors (Alpine + npm)
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
+RUN npm config set registry https://registry.npmmirror.com
+
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+RUN pnpm config set registry https://registry.npmmirror.com
 WORKDIR /app
 
 # Copy workspace configuration
@@ -34,6 +39,9 @@ RUN pnpm --filter @my-app/frontend build
 # Stage 3: Production image with Nginx
 # ============================================
 FROM nginx:alpine AS production
+
+# Configure China mirrors (Alpine)
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 
 # Remove default nginx configuration
 RUN rm /etc/nginx/conf.d/default.conf

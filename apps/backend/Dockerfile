@@ -3,7 +3,12 @@
 # ============================================
 FROM node:20-alpine AS base
 
+# Configure China mirrors (Alpine + npm)
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
+RUN npm config set registry https://registry.npmmirror.com
+
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+RUN pnpm config set registry https://registry.npmmirror.com
 WORKDIR /app
 
 # Copy workspace configuration
@@ -38,7 +43,12 @@ RUN pnpm --filter @my-app/backend build
 # ============================================
 FROM node:20-alpine AS production
 
+# Configure China mirrors (Alpine + npm)
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
+RUN npm config set registry https://registry.npmmirror.com
+
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+RUN pnpm config set registry https://registry.npmmirror.com
 
 # Create non-root user for security
 RUN addgroup --system --gid 1001 nodejs && \
