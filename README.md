@@ -20,35 +20,38 @@ nest-vue-template/
 
 ## 🛠️ 技术栈
 
-### 后端 (NestJS 10)
+### 后端 (NestJS 10.4+)
 
 | 类别 | 技术 |
 |------|------|
 | 运行时 | Node.js 18+ |
-| 数据库 | PostgreSQL 16 + Prisma ORM |
-| 缓存/队列 | Redis 7 + BullMQ |
-| 认证 | JWT + Passport |
-| 验证 | Zod + nestjs-zod |
-| 文件存储 | AWS S3 兼容 |
-| 邮件 | Nodemailer |
-| WebSocket | Socket.IO |
-| 日志 | nestjs-pino |
-| API 文档 | Swagger |
+| 数据库 | PostgreSQL 16 + Prisma 6 ORM |
+| 缓存/队列 | Redis 7 + BullMQ 5 + cache-manager |
+| 认证 | JWT + Passport（accessToken + refreshToken 双令牌） |
+| 验证 | Zod + nestjs-zod（自动生成 Swagger 文档） |
+| 日志 | nestjs-pino + pino-pretty |
+| API 文档 | @nestjs/swagger |
+| WebSocket | @nestjs/websockets + Socket.IO |
+| 速率限制 | @nestjs/throttler（三级限流策略） |
+| 事件驱动 | @nestjs/event-emitter |
+| 安全 | helmet + sanitize-html + xss |
+| 文件上传 | multer + AWS S3 SDK（支持 S3/OSS/MinIO） |
+| 邮件 | @nestjs-modules/mailer + nodemailer |
 
-### 前端 (Vue 3)
+### 前端 (Vue 3.5+)
 
 | 类别 | 技术 |
 |------|------|
-| 构建 | Vite |
+| 构建 | Vite 6 |
 | 路由 | Vue Router 4 |
-| 状态 | Pinia + 持久化 |
-| UI | Tailwind CSS + shadcn-vue (Reka UI) |
-| 请求 | TanStack Query + Axios |
-| 表单 | VeeValidate + Zod |
-| 图表 | ECharts + vue-echarts |
-| 国际化 | Vue I18n |
-| 图标 | Lucide Vue |
-| 工具 | VueUse |
+| 状态 | Pinia + pinia-plugin-persistedstate |
+| UI | Tailwind CSS 3 + shadcn-vue (Reka UI) |
+| 请求 | TanStack Vue Query 5 + Axios |
+| 表单 | VeeValidate 4 + @vee-validate/zod + Zod |
+| 图表 | ECharts 6 + vue-echarts 8 |
+| 国际化 | Vue I18n 11 |
+| 图标 | lucide-vue-next |
+| 工具 | VueUse 14 |
 
 ### 跨端能力
 
@@ -62,11 +65,12 @@ nest-vue-template/
 
 | 类别 | 技术 |
 |------|------|
-| 包管理 | pnpm 9+ (workspace) |
-| 构建编排 | Turbo |
-| 代码规范 | ESLint 9 + Prettier |
-| 测试 | Vitest |
-| Git Hooks | Husky + lint-staged |
+| 包管理 | pnpm 9.15+ (workspace) |
+| 构建编排 | Turbo 2.3+ |
+| 代码规范 | ESLint 9 + Prettier 3 |
+| 测试 | Vitest 4 |
+| Git Hooks | Husky 9 + lint-staged |
+| 共享包构建 | tsup（ESM + CJS 双格式输出） |
 | 容器化 | Docker + Docker Compose |
 
 ## 🚀 快速开始
@@ -148,7 +152,11 @@ pnpm electron:build:linux           # 构建 Linux 应用
 # Docker
 docker compose up postgres redis -d # 启动数据库服务
 docker compose up -d                # 启动所有服务
-docker compose logs -f              # 查看日志
+pnpm docker:build                   # 构建 Docker 镜像
+pnpm docker:up                      # 启动所有容器
+pnpm docker:down                    # 停止所有容器
+pnpm docker:logs                    # 查看容器日志
+pnpm docker:clean                   # 停止并清理所有容器和数据卷
 ```
 
 ## 📁 项目结构
@@ -353,22 +361,70 @@ export * from './dto/common.dto'       // 通用响应接口
 export * from './utils/user.utils'     // 工具函数
 ```
 
+## 📋 API 响应格式
+
+所有 API 响应遵循统一格式：
+
+```typescript
+// 成功响应
+interface ApiResponse<T> {
+  success: boolean    // 是否成功
+  data: T             // 响应数据
+  message?: string    // 消息描述
+  timestamp: string   // ISO 时间戳
+}
+
+// 分页响应
+interface PaginatedResponse<T> {
+  items: T[]          // 数据列表
+  total: number       // 总数
+  page: number        // 当前页码
+  pageSize: number    // 每页数量
+  totalPages: number  // 总页数
+}
+```
+
 ## 🔐 安全特性
+
+### 安全防护
 
 - **Helmet**: 安全头设置
 - **CORS**: 跨域资源共享配置
-- **CSRF**: 跨站请求伪造防护
-- **XSS**: 跨站脚本攻击防护
-- **速率限制**: 防止暴力破解
+- **CSRF**: 跨站请求伪造防护（非 GET 请求自动携带 Token）
+- **XSS**: 跨站脚本攻击防护（sanitize-html + xss）
 - **输入验证**: Zod schema 验证
 - **密码加密**: bcrypt 哈希
+
+### 认证机制
+
+- 采用 **accessToken + refreshToken** 双令牌机制
+- accessToken 存储于 localStorage，用于 API 请求认证
+- 非 GET 请求自动携带 CSRF Token（从 Cookie 读取 `XSRF-TOKEN`）
+
+### 速率限制
+
+后端配置了三级速率限制（ThrottlerGuard）：
+
+| 级别 | 时间窗口 | 最大请求数 | 说明 |
+|------|----------|------------|------|
+| 短期 | 1 秒 | 3 次 | 防暴力破解 |
+| 中期 | 10 秒 | 20 次 | 正常使用限制 |
+| 长期 | 1 分钟 | 100 次 | 整体流量控制 |
 
 ## 📚 API 文档
 
 启动后端服务后，访问 Swagger 文档：
 
-- 本地: http://localhost:3000/api/docs
-- 生产环境: http://your-domain/api/docs
+- 本地: http://localhost:3000/api
+- 生产环境: http://your-domain/api
+
+### 开发服务器
+
+| 服务 | 地址 | 说明 |
+|------|------|------|
+| 后端 | http://localhost:3000 | NestJS 服务（Swagger：/api） |
+| 前端 | http://localhost:5173 | Vite 开发服务器（自动代理 /api 到后端） |
+| Prisma Studio | http://localhost:5555 | 数据库可视化（执行 `pnpm db:studio`） |
 
 ## 🌍 国际化
 
@@ -383,7 +439,22 @@ export * from './utils/user.utils'     // 工具函数
 
 ### 环境变量
 
-生产环境需要配置以下关键环境变量：
+开发前须复制 `.env.example` 为 `.env` 并配置：
+
+| 变量名 | 说明 | 默认值 |
+|--------|------|--------|
+| `DATABASE_URL` | PostgreSQL 连接字符串 | - |
+| `REDIS_HOST` | Redis 主机 | localhost |
+| `REDIS_PORT` | Redis 端口 | 6379 |
+| `JWT_SECRET` | JWT 签名密钥（生产环境必须修改） | - |
+| `JWT_EXPIRES_IN` | 访问令牌过期时间 | 7d |
+| `CORS_ORIGIN` | 允许的跨域来源 | http://localhost:5173 |
+| `LOG_LEVEL` | 日志级别 | debug |
+| `THROTTLE_*` | 速率限制配置 | 详见 .env.example |
+| `MAIL_*` | SMTP 邮件配置 | 详见 .env.example |
+| `S3_*` | 云存储配置（S3/OSS/MinIO） | 详见 .env.example |
+
+完整配置示例：
 
 ```env
 # 数据库
@@ -396,8 +467,7 @@ REDIS_PASSWORD=your-redis-password
 
 # JWT
 JWT_SECRET=your-super-secret-jwt-key
-JWT_ACCESS_EXPIRES_IN=900
-JWT_REFRESH_EXPIRES_IN=7d
+JWT_EXPIRES_IN=7d
 
 # 邮件
 MAIL_HOST=smtp.example.com
@@ -405,7 +475,7 @@ MAIL_PORT=587
 MAIL_USER=your-email
 MAIL_PASSWORD=your-password
 
-# 文件存储
+# 文件存储（S3/OSS/MinIO）
 S3_BUCKET=your-bucket
 S3_REGION=your-region
 S3_ACCESS_KEY_ID=your-access-key
@@ -431,10 +501,35 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 ## ⚠️ 注意事项
 
+### 开发规范
+
 - 提交代码前须运行 `pnpm lint` 和 `pnpm format` 确保代码质量
-- 共享包 (`@my-app/shared`) 须配置 `exports` 字段，否则 Node.js 无法解析
-- 后端依赖 Redis，开发前须确保 Redis 服务已启动
-- 前后端均使用 Zod 进行数据校验，Schema 可在共享包中复用
+- 代码注释使用中文，类型定义优先使用 interface（纯接口场景）或 z.infer（Schema 场景）
+- JS/TS 规范：2 空格缩进、单引号、无分号
+
+### 共享包
+
+- 共享包 (`@my-app/shared`) 必须配置 `exports` 字段，否则 Node.js 无法解析
+- 修改共享包后需重新构建：`pnpm --filter @my-app/shared build`
+- 共享包使用 tsup 构建，输出 ESM + CJS 双格式
+
+### 依赖管理
+
+- **重要**：前端 `zod` 依赖必须在 `apps/frontend/package.json` 中显式声明，否则 Docker 构建会失败（pnpm 隔离 node_modules 策略）
+- Zod Schema 在共享包中定义，前后端通过 workspace 引用
+- 使用 `workspace:*` 引用 monorepo 内部包
+
+### 服务依赖
+
+- 后端依赖 Redis，开发前须启动：`docker compose up redis -d`
+- 后端依赖 PostgreSQL，开发前须启动：`docker compose up postgres -d`
+- 首次启动须执行 `pnpm db:push` 初始化数据库
+
+### Docker 构建
+
+- 前端 Dockerfile 使用多阶段构建（builder → nginx:alpine）
+- 后端 Dockerfile 使用多阶段构建（builder → node:alpine）
+- 构建时须确保所有依赖都已显式声明
 
 ## 🆘 常见问题
 
