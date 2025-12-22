@@ -3,8 +3,7 @@
 # ============================================
 FROM node:20-alpine AS base
 
-# Configure China mirrors (Alpine + npm)
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
+# Configure China npm registry
 RUN npm config set registry https://registry.npmmirror.com
 
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
@@ -43,8 +42,7 @@ RUN pnpm --filter @my-app/backend build
 # ============================================
 FROM node:20-alpine AS production
 
-# Configure China mirrors (Alpine + npm)
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
+# Configure China npm registry
 RUN npm config set registry https://registry.npmmirror.com
 
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
