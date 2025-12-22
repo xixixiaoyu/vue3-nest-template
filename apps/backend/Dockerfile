@@ -73,8 +73,9 @@ COPY apps/backend/prisma ./apps/backend/prisma
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 COPY --from=builder /app/packages/shared ./packages/shared
 
-# Generate Prisma client in production stage (ensures correct path)
-RUN cd apps/backend && npx prisma generate
+# Copy generated Prisma client from builder (avoid reinstalling prisma CLI)
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
 
 # Change ownership to non-root user
 RUN chown -R nestjs:nodejs /app
