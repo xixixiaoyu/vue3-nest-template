@@ -36,7 +36,7 @@ COPY tsconfig.base.json ./
 RUN pnpm --filter @my-app/backend prisma:generate
 
 # 构建共享包和后端应用
-RUN pnpm --filter @my-app/shared build 2>/dev/null || true
+RUN pnpm --filter @my-app/shared build
 RUN pnpm --filter @my-app/backend build
 
 # ============================================

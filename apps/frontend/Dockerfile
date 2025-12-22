@@ -33,7 +33,7 @@ COPY apps/frontend ./apps/frontend
 COPY tsconfig.base.json ./
 
 # 构建共享包和前端应用
-RUN pnpm --filter @my-app/shared build 2>/dev/null || true
+RUN pnpm --filter @my-app/shared build
 RUN pnpm --filter @my-app/frontend build
 
 # ============================================
