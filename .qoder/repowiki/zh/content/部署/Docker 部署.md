@@ -3,6 +3,7 @@
 <cite>
 **本文引用的文件**   
 - [docker-compose.yml](file://docker-compose.yml)
+- [apps/backend/src/health/health.controller.ts](file://apps/backend/src/health/health.controller.ts)
 - [apps/backend/Dockerfile](file://apps/backend/Dockerfile)
 - [apps/frontend/Dockerfile](file://apps/frontend/Dockerfile)
 - [.env.docker.example](file://.env.docker.example)
@@ -19,11 +20,10 @@
 
 ## 更新摘要
 **已做更改**   
-- 新增资源限制配置说明（内存限制与保留）
-- 新增安全配置说明（禁用新权限、只读文件系统）
-- 新增非 root 用户运行机制说明
-- 新增 tmpfs 挂载配置及其作用
-- 更新了附录中的环境变量示例文件说明
+- 更新了所有涉及后端健康检查路径的说明，从 `/health` 调整为 `/api/health`
+- 更新了后端服务的健康检查参数（间隔、超时、重试次数、启动等待期）
+- 更新了“后端服务”和“故障排查指南”中的健康检查相关描述
+- 更新了“附录”中的端口与健康检查对照表
 
 ## 目录
 1. [简介](#简介)
@@ -67,10 +67,10 @@ RD --- VOL_RD
 ```
 
 **图表来源**
-- [docker-compose.yml](file://docker-compose.yml#L1-L108)
+- [docker-compose.yml](file://docker-compose.yml#L1-L189)
 
 **章节来源**
-- [docker-compose.yml](file://docker-compose.yml#L1-L108)
+- [docker-compose.yml](file://docker-compose.yml#L1-L189)
 - [pnpm-workspace.yaml](file://pnpm-workspace.yaml#L1-L4)
 
 ## 核心组件
@@ -78,7 +78,7 @@ RD --- VOL_RD
   - 运行时：Node.js 20 Alpine
   - 构建方式：多阶段构建（基础依赖安装、构建产物、生产镜像）
   - 端口：3000（容器内）
-  - 健康检查：/health
+  - 健康检查：/api/health
   - 依赖：postgres（数据库）、redis（缓存/队列）
   - 环境变量：NODE_ENV、PORT、DATABASE_URL、REDIS_*、JWT_* 等
 - 前端（frontend）
@@ -100,7 +100,7 @@ RD --- VOL_RD
   - 健康检查：redis-cli ping
 
 **章节来源**
-- [docker-compose.yml](file://docker-compose.yml#L1-L108)
+- [docker-compose.yml](file://docker-compose.yml#L1-L189)
 - [apps/backend/Dockerfile](file://apps/backend/Dockerfile#L1-L81)
 - [apps/frontend/Dockerfile](file://apps/frontend/Dockerfile#L1-L65)
 - [apps/frontend/nginx.conf](file://apps/frontend/nginx.conf#L1-L59)
@@ -127,7 +127,7 @@ FE --- NET
 ```
 
 **图表来源**
-- [docker-compose.yml](file://docker-compose.yml#L1-L108)
+- [docker-compose.yml](file://docker-compose.yml#L1-L189)
 - [apps/frontend/nginx.conf](file://apps/frontend/nginx.conf#L1-L59)
 
 ## 详细组件分析
@@ -140,7 +140,13 @@ FE --- NET
   - NODE_ENV、PORT、DATABASE_URL、REDIS_HOST、REDIS_PORT、JWT_SECRET、JWT_EXPIRES_IN 等
   - DATABASE_URL 已内置指向 postgres 服务名与默认数据库名
 - 健康检查
-  - /health（HTTP 200）
+  - **路径**：`/api/health`（由 `HealthController` 定义在 `health` 路由下，结合 NestJS 应用全局前缀 `/api`）
+  - **测试命令**：`wget --spider -q http://localhost:3000/api/health || exit 1`
+  - **参数**：
+    - 间隔：10s
+    - 超时：5s
+    - 重试次数：5
+    - 启动等待期：30s
 - 依赖关系
   - 依赖 postgres 与 redis 健康后再启动
 - 关键实现点
@@ -168,11 +174,12 @@ F-->>C : "返回响应"
 
 **图表来源**
 - [apps/frontend/nginx.conf](file://apps/frontend/nginx.conf#L1-L59)
-- [docker-compose.yml](file://docker-compose.yml#L1-L108)
+- [docker-compose.yml](file://docker-compose.yml#L1-L189)
 
 **章节来源**
-- [docker-compose.yml](file://docker-compose.yml#L45-L77)
+- [docker-compose.yml](file://docker-compose.yml#L68-L143)
 - [apps/backend/src/main.ts](file://apps/backend/src/main.ts#L1-L94)
+- [apps/backend/src/health/health.controller.ts](file://apps/backend/src/health/health.controller.ts#L1-L77)
 
 ### 前端服务（Vue + Nginx）
 - 端口映射
@@ -211,7 +218,7 @@ Index --> End
 - [apps/frontend/nginx.conf](file://apps/frontend/nginx.conf#L1-L59)
 
 **章节来源**
-- [docker-compose.yml](file://docker-compose.yml#L78-L100)
+- [docker-compose.yml](file://docker-compose.yml#L147-L180)
 - [apps/frontend/nginx.conf](file://apps/frontend/nginx.conf#L1-L59)
 
 ### 数据库（PostgreSQL）
@@ -229,7 +236,7 @@ Index --> End
   - 禁用新权限：`no-new-privileges:true`
 
 **章节来源**
-- [docker-compose.yml](file://docker-compose.yml#L1-L24)
+- [docker-compose.yml](file://docker-compose.yml#L1-L34)
 
 ### 缓存/队列（Redis）
 - 端口映射
@@ -246,7 +253,7 @@ Index --> End
   - 禁用新权限：`no-new-privileges:true`
 
 **章节来源**
-- [docker-compose.yml](file://docker-compose.yml#L25-L44)
+- [docker-compose.yml](file://docker-compose.yml#L38-L63)
 
 ### Dockerfile 多阶段构建与关键指令
 - 后端 Dockerfile
@@ -294,10 +301,10 @@ NET --> RD
 ```
 
 **图表来源**
-- [docker-compose.yml](file://docker-compose.yml#L1-L108)
+- [docker-compose.yml](file://docker-compose.yml#L1-L189)
 
 **章节来源**
-- [docker-compose.yml](file://docker-compose.yml#L1-L108)
+- [docker-compose.yml](file://docker-compose.yml#L1-L189)
 
 ## 性能考虑
 - 镜像分层缓存
@@ -339,7 +346,8 @@ NET --> RD
 - 健康检查失败
   - 查看容器日志（docker compose logs -f）
   - 确认端口映射与监听地址一致
-  - 检查后端 /health 实现与 Nginx /health 实现是否正确
+  - 检查后端 `/api/health` 实现与 Nginx `/health` 实现是否正确
+  - 确认 NestJS 应用设置了全局前缀 `/api`，因此 `HealthController` 的 `health` 路由实际暴露为 `/api/health`
 - CORS 与代理问题
   - 前端 /api 代理到 backend:3000，确认后端允许来源与凭证
   - 后端 CORS 配置来源于环境变量（CORS_ORIGIN），请确保其与前端访问域名一致
@@ -348,9 +356,10 @@ NET --> RD
   - 确保非 root 用户对所需目录有适当权限
 
 **章节来源**
-- [docker-compose.yml](file://docker-compose.yml#L1-L108)
+- [docker-compose.yml](file://docker-compose.yml#L1-L189)
 - [apps/frontend/nginx.conf](file://apps/frontend/nginx.conf#L1-L59)
 - [apps/backend/src/main.ts](file://apps/backend/src/main.ts#L1-L94)
+- [apps/backend/src/health/health.controller.ts](file://apps/backend/src/health/health.controller.ts#L1-L77)
 
 ## 结论
 通过 docker-compose 一键启动整套应用栈，配合多阶段 Dockerfile 与 Nginx 配置，可以在开发、预发布与生产环境中快速部署。建议在生产环境：
@@ -393,7 +402,7 @@ NET --> RD
 **章节来源**
 - [.env.docker.example](file://.env.docker.example#L1-L72)
 - [.env.example](file://.env.example#L1-L51)
-- [docker-compose.yml](file://docker-compose.yml#L1-L108)
+- [docker-compose.yml](file://docker-compose.yml#L1-L189)
 - [apps/backend/src/redis/redis.module.ts](file://apps/backend/src/redis/redis.module.ts#L1-L84)
 - [apps/backend/src/mail/mail.module.ts](file://apps/backend/src/mail/mail.module.ts#L1-L34)
 - [apps/backend/src/upload/storage.service.ts](file://apps/backend/src/upload/storage.service.ts#L1-L124)
@@ -401,10 +410,12 @@ NET --> RD
 ### 端口与健康检查对照表
 - 后端（backend）
   - 端口：3000（容器内）
-  - 健康检查：/health
+  - 健康检查：/api/health
+  - 参数：间隔 10s，超时 5s，重试 5 次，启动等待期 30s
 - 前端（frontend）
   - 端口：80（容器内）
   - 健康检查：/health
+  - 参数：间隔 30s，超时 10s，重试 3 次，启动等待期 5s
 - 数据库（postgres）
   - 端口：5432（容器内）
   - 健康检查：pg_isready
@@ -413,7 +424,7 @@ NET --> RD
   - 健康检查：redis-cli ping
 
 **章节来源**
-- [docker-compose.yml](file://docker-compose.yml#L1-L108)
+- [docker-compose.yml](file://docker-compose.yml#L1-L189)
 - [apps/frontend/nginx.conf](file://apps/frontend/nginx.conf#L1-L59)
 
 ### 服务启动顺序与依赖
@@ -422,7 +433,7 @@ NET --> RD
 - 建议在生产中增加数据库迁移与初始化脚本（可在后端启动前执行）
 
 **章节来源**
-- [docker-compose.yml](file://docker-compose.yml#L45-L100)
+- [docker-compose.yml](file://docker-compose.yml#L68-L180)
 
 ### Nginx 与后端交互流程
 ```mermaid
@@ -440,4 +451,4 @@ N-->>U : "静态资源"
 
 **图表来源**
 - [apps/frontend/nginx.conf](file://apps/frontend/nginx.conf#L1-L59)
-- [docker-compose.yml](file://docker-compose.yml#L78-L100)
+- [docker-compose.yml](file://docker-compose.yml#L147-L180)
