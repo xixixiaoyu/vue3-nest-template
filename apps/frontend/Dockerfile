@@ -3,19 +3,20 @@
 # ============================================
 FROM node:20-alpine AS base
 
-# Use China mirror for corepack
+# npm 镜像源配置 (淘宝镜像)
 ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
 
+# 启用 corepack 并安装 pnpm
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+
 WORKDIR /app
 
-# Copy workspace configuration (includes .npmrc for registry config)
+# 先复制依赖配置文件，利用 Docker 层缓存
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json .npmrc ./
 COPY apps/frontend/package.json ./apps/frontend/
 COPY packages/shared/package.json ./packages/shared/
 
-# Install dependencies
-# Skip electron binary download - not needed for web build
+# 安装依赖，跳过 Electron 二进制下载 (构建 Web 版本无需)
 ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1
 RUN pnpm install --frozen-lockfile
 
@@ -26,12 +27,12 @@ FROM base AS builder
 
 WORKDIR /app
 
-# Copy source code
+# 复制源代码
 COPY packages/shared ./packages/shared
 COPY apps/frontend ./apps/frontend
 COPY tsconfig.base.json ./
 
-# Build shared package and frontend
+# 构建共享包和前端应用
 RUN pnpm --filter @my-app/shared build 2>/dev/null || true
 RUN pnpm --filter @my-app/frontend build
 
@@ -40,30 +41,39 @@ RUN pnpm --filter @my-app/frontend build
 # ============================================
 FROM nginx:alpine AS production
 
-# Remove default nginx configuration
+# 移除默认 nginx 配置
 RUN rm /etc/nginx/conf.d/default.conf
 
-# Copy custom nginx configuration
+# 复制自定义 nginx 配置
 COPY apps/frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy built static files
+# 复制构建产物
 COPY --from=builder /app/apps/frontend/dist /usr/share/nginx/html
 
-# Create non-root user for security
+# 创建非 root 用户并配置权限
 RUN addgroup -g 1001 -S frontend && \
     adduser -S -D -H -u 1001 -s /sbin/nologin -G frontend frontend && \
+    # 设置文件所有权
     chown -R frontend:frontend /usr/share/nginx/html && \
     chown -R frontend:frontend /var/cache/nginx && \
+    # 创建并设置日志目录权限
+    mkdir -p /var/log/nginx && \
     chown -R frontend:frontend /var/log/nginx && \
+    # 设置 PID 文件权限
     touch /var/run/nginx.pid && \
-    chown -R frontend:frontend /var/run/nginx.pid
+    chown frontend:frontend /var/run/nginx.pid && \
+    # 清理缓存减小镜像大小
+    rm -rf /var/cache/apk/*
 
-# Expose port
+# 切换到非 root 用户
+USER frontend
+
+# 暴露端口
 EXPOSE 80
 
-# Health check
+# 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:80/health || exit 1
 
-# Start nginx
+# 启动 nginx
 CMD ["nginx", "-g", "daemon off;"]

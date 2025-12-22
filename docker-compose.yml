@@ -21,6 +21,16 @@ services:
       retries: 5
     networks:
       - myapp-network
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    # 安全配置
+    security_opt:
+      - no-new-privileges:true
 
   # ============================================
   # Redis Cache & Queue
@@ -31,7 +41,7 @@ services:
     restart: unless-stopped
     ports:
       - '6379:6379'
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     healthcheck:
@@ -41,6 +51,16 @@ services:
       retries: 5
     networks:
       - myapp-network
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+    # 安全配置
+    security_opt:
+      - no-new-privileges:true
 
   # ============================================
   # Backend (NestJS)
@@ -102,10 +122,24 @@ services:
       test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:3000/health']
       interval: 30s
       timeout: 10s
-      start_period: 10s
+      start_period: 15s
       retries: 3
     networks:
       - myapp-network
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    # 安全配置
+    security_opt:
+      - no-new-privileges:true
+    # 只读根文件系统 (可选，根据需要启用)
+    # read_only: true
+    tmpfs:
+      - /tmp
 
   # ============================================
   # Frontend (Vue + Nginx)
@@ -129,6 +163,21 @@ services:
       retries: 3
     networks:
       - myapp-network
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+    # 安全配置
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /var/run
+      - /var/cache/nginx
+      - /tmp
 
 networks:
   myapp-network:

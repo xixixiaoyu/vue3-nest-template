@@ -3,19 +3,21 @@
 # ============================================
 FROM node:20-alpine AS base
 
-# Use China mirrors to avoid network issues
+# npm 镜像源配置 (淘宝镜像)
 ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
 ENV PRISMA_ENGINES_MIRROR=https://registry.npmmirror.com/-/binary/prisma
 
+# 启用 corepack 并安装 pnpm
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+
 WORKDIR /app
 
-# Copy workspace configuration
+# 先复制依赖配置文件，利用 Docker 层缓存
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json .npmrc ./
 COPY apps/backend/package.json ./apps/backend/
 COPY packages/shared/package.json ./packages/shared/
 
-# Install dependencies
+# 安装依赖
 RUN pnpm install --frozen-lockfile
 
 # ============================================
@@ -25,15 +27,15 @@ FROM base AS builder
 
 WORKDIR /app
 
-# Copy source code
+# 复制源代码
 COPY packages/shared ./packages/shared
 COPY apps/backend ./apps/backend
 COPY tsconfig.base.json ./
 
-# Generate Prisma client
+# 生成 Prisma Client
 RUN pnpm --filter @my-app/backend prisma:generate
 
-# Build shared package and backend
+# 构建共享包和后端应用
 RUN pnpm --filter @my-app/shared build 2>/dev/null || true
 RUN pnpm --filter @my-app/backend build
 
@@ -42,51 +44,55 @@ RUN pnpm --filter @my-app/backend build
 # ============================================
 FROM node:20-alpine AS production
 
-# Install build tools for native modules (bcrypt etc.)
-RUN apk add --no-cache python3 make g++
-
-# Use China mirror for corepack
+# npm 镜像源配置 (淘宝镜像)
 ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
+ENV PRISMA_ENGINES_MIRROR=https://registry.npmmirror.com/-/binary/prisma
 
-RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+# 安装构建原生模块所需工具 (bcrypt 等)，完成后清理缓存
+RUN apk add --no-cache --virtual .build-deps python3 make g++ && \
+    corepack enable && corepack prepare pnpm@9.15.0 --activate
 
-# Create non-root user for security
+# 创建非 root 用户以增强安全性
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nestjs
 
 WORKDIR /app
 
-# Copy package files for production install
+# 复制依赖配置文件
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY apps/backend/package.json ./apps/backend/
 COPY packages/shared/package.json ./packages/shared/
 
-# Install production dependencies only (ignore scripts to skip husky etc.)
-RUN pnpm install --frozen-lockfile --prod --ignore-scripts
-
-# Copy Prisma schema and generate client in production
-# prisma is now a production dependency, use pnpm exec to run it
+# 复制 Prisma schema
 COPY apps/backend/prisma ./apps/backend/prisma
-ENV PRISMA_ENGINES_MIRROR=https://registry.npmmirror.com/-/binary/prisma
-RUN pnpm --filter @my-app/backend exec prisma generate
 
-# Copy built application from builder
+# 安装生产依赖并生成 Prisma Client，然后清理构建工具
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts && \
+    pnpm --filter @my-app/backend exec prisma generate && \
+    apk del .build-deps && \
+    rm -rf /root/.cache /tmp/*
+
+# 从构建阶段复制编译产物
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 COPY --from=builder /app/packages/shared ./packages/shared
 
-# Change ownership to non-root user
+# 更改文件所有权
 RUN chown -R nestjs:nodejs /app
 
+# 切换到非 root 用户
 USER nestjs
 
 WORKDIR /app/apps/backend
 
-# Expose port
+# 暴露端口
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+# 设置生产环境变量
+ENV NODE_ENV=production
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
 
-# Start application
+# 启动应用
 CMD ["node", "dist/main"]
