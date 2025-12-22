@@ -71,7 +71,7 @@ COPY apps/backend/prisma ./apps/backend/prisma
 
 # Copy built application from builder
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
-COPY --from=builder /app/packages/shared/dist ./packages/shared/dist 2>/dev/null || true
+COPY --from=builder /app/packages/shared ./packages/shared
 
 # Generate Prisma client in production stage (ensures correct path)
 RUN cd apps/backend && npx prisma generate
