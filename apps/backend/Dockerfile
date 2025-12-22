@@ -66,13 +66,13 @@ COPY packages/shared/package.json ./packages/shared/
 # Install production dependencies only (ignore scripts to skip husky etc.)
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
-# Copy Prisma schema and generate client
+# Copy Prisma schema
 COPY apps/backend/prisma ./apps/backend/prisma
-RUN pnpm --filter @my-app/backend prisma:generate
 
-# Copy built application
+# Copy built application and generated Prisma client from builder
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist 2>/dev/null || true
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # Change ownership to non-root user
 RUN chown -R nestjs:nodejs /app
