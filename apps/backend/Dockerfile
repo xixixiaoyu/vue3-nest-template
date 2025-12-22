@@ -48,9 +48,8 @@ FROM node:20-alpine AS production
 ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
 ENV PRISMA_ENGINES_MIRROR=https://registry.npmmirror.com/-/binary/prisma
 
-# 安装构建原生模块所需工具 (bcrypt 等)，完成后清理缓存
-RUN apk add --no-cache --virtual .build-deps python3 make g++ && \
-    corepack enable && corepack prepare pnpm@9.15.0 --activate
+# 启用 pnpm
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 
 # 创建非 root 用户以增强安全性
 RUN addgroup --system --gid 1001 nodejs && \
@@ -66,10 +65,9 @@ COPY packages/shared/package.json ./packages/shared/
 # 复制 Prisma schema
 COPY apps/backend/prisma ./apps/backend/prisma
 
-# 安装生产依赖并生成 Prisma Client，然后清理构建工具
+# 安装生产依赖并生成 Prisma Client
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts && \
     pnpm --filter @my-app/backend exec prisma generate && \
-    apk del .build-deps && \
     rm -rf /root/.cache /tmp/*
 
 # 从构建阶段复制编译产物
