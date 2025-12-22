@@ -45,9 +45,9 @@ FROM node:20-alpine AS production
 # Install build tools for native modules (bcrypt etc.)
 RUN apk add --no-cache python3 make g++
 
-# Configure China npm registry and binary mirrors
-RUN npm config set registry https://registry.npmmirror.com
-RUN npm config set bcrypt_binary_host_mirror https://npmmirror.com/mirrors/bcrypt/
+# Configure China npm registry and binary mirrors via ENV (compatible with npm 10+)
+ENV npm_config_registry=https://registry.npmmirror.com/
+ENV npm_config_bcrypt_binary_host_mirror=https://npmmirror.com/mirrors/bcrypt/
 
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 RUN pnpm config set registry https://registry.npmmirror.com
