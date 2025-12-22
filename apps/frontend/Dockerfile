@@ -44,7 +44,10 @@ FROM nginx:alpine AS production
 # 移除默认 nginx 配置
 RUN rm /etc/nginx/conf.d/default.conf
 
-# 复制自定义 nginx 配置
+# 复制自定义 nginx 主配置（适配非 root 用户）
+COPY apps/frontend/nginx.main.conf /etc/nginx/nginx.conf
+
+# 复制 server block 配置
 COPY apps/frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
 # 复制构建产物
