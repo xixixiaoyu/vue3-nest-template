@@ -1,7 +1,7 @@
 # Docker 部署
 
 <cite>
-**本文引用的文件**
+**本文引用的文件**   
 - [docker-compose.yml](file://docker-compose.yml)
 - [apps/backend/Dockerfile](file://apps/backend/Dockerfile)
 - [apps/frontend/Dockerfile](file://apps/frontend/Dockerfile)
@@ -18,10 +18,11 @@
 </cite>
 
 ## 更新摘要
-**已做更改**
-- 更新了环境变量注入语法，从 $${VAR} 统一改为 ${VAR}
-- 新增 Redis、邮件、S3 存储、速率限制等环境变量的详细说明
-- 补充了新环境变量在后端模块中的实际应用位置
+**已做更改**   
+- 新增资源限制配置说明（内存限制与保留）
+- 新增安全配置说明（禁用新权限、只读文件系统）
+- 新增非 root 用户运行机制说明
+- 新增 tmpfs 挂载配置及其作用
 - 更新了附录中的环境变量示例文件说明
 
 ## 目录
@@ -65,10 +66,10 @@ PG --- VOL_PG
 RD --- VOL_RD
 ```
 
-图表来源
+**图表来源**
 - [docker-compose.yml](file://docker-compose.yml#L1-L108)
 
-章节来源
+**章节来源**
 - [docker-compose.yml](file://docker-compose.yml#L1-L108)
 - [pnpm-workspace.yaml](file://pnpm-workspace.yaml#L1-L4)
 
@@ -98,7 +99,7 @@ RD --- VOL_RD
   - 卷：redis_data
   - 健康检查：redis-cli ping
 
-章节来源
+**章节来源**
 - [docker-compose.yml](file://docker-compose.yml#L1-L108)
 - [apps/backend/Dockerfile](file://apps/backend/Dockerfile#L1-L81)
 - [apps/frontend/Dockerfile](file://apps/frontend/Dockerfile#L1-L65)
@@ -125,7 +126,7 @@ BE --- NET
 FE --- NET
 ```
 
-图表来源
+**图表来源**
 - [docker-compose.yml](file://docker-compose.yml#L1-L108)
 - [apps/frontend/nginx.conf](file://apps/frontend/nginx.conf#L1-L59)
 
@@ -145,6 +146,14 @@ FE --- NET
 - 关键实现点
   - 应用启动设置全局前缀、CORS、Helmet、压缩、Zod 验证、Swagger 文档等
   - 端口来自环境变量（默认 3000）
+- 资源限制
+  - 内存限制：512M
+  - 内存保留：256M
+- 安全配置
+  - 禁用新权限：`no-new-privileges:true`
+  - tmpfs 挂载：`/tmp`
+- 运行用户
+  - 使用非 root 用户 `nestjs` 运行，增强安全性
 
 ```mermaid
 sequenceDiagram
@@ -157,11 +166,11 @@ B-->>F : "返回响应"
 F-->>C : "返回响应"
 ```
 
-图表来源
+**图表来源**
 - [apps/frontend/nginx.conf](file://apps/frontend/nginx.conf#L1-L59)
 - [docker-compose.yml](file://docker-compose.yml#L1-L108)
 
-章节来源
+**章节来源**
 - [docker-compose.yml](file://docker-compose.yml#L45-L77)
 - [apps/backend/src/main.ts](file://apps/backend/src/main.ts#L1-L94)
 
@@ -175,6 +184,15 @@ F-->>C : "返回响应"
   - 依赖 backend 健康后再启动
 - Nginx 配置要点
   - Gzip 压缩、安全头、静态资源缓存、SPA 路由回退、/api 反向代理到 backend:3000、隐藏文件拒绝访问
+- 资源限制
+  - 内存限制：128M
+  - 内存保留：64M
+- 安全配置
+  - 禁用新权限：`no-new-privileges:true`
+  - 只读文件系统：`read_only: true`
+  - tmpfs 挂载：`/var/run`, `/var/cache/nginx`, `/tmp`
+- 运行用户
+  - 使用非 root 用户 `frontend` 运行，增强安全性
 
 ```mermaid
 flowchart TD
@@ -189,10 +207,10 @@ Proxy --> End(["完成"])
 Index --> End
 ```
 
-图表来源
+**图表来源**
 - [apps/frontend/nginx.conf](file://apps/frontend/nginx.conf#L1-L59)
 
-章节来源
+**章节来源**
 - [docker-compose.yml](file://docker-compose.yml#L78-L100)
 - [apps/frontend/nginx.conf](file://apps/frontend/nginx.conf#L1-L59)
 
@@ -204,8 +222,13 @@ Index --> End
   - pg_isready
 - 卷
   - postgres_data（持久化）
+- 资源限制
+  - 内存限制：512M
+  - 内存保留：256M
+- 安全配置
+  - 禁用新权限：`no-new-privileges:true`
 
-章节来源
+**章节来源**
 - [docker-compose.yml](file://docker-compose.yml#L1-L24)
 
 ### 缓存/队列（Redis）
@@ -216,8 +239,13 @@ Index --> End
   - redis-cli ping
 - 卷
   - redis_data（持久化）
+- 资源限制
+  - 内存限制：256M
+  - 内存保留：128M
+- 安全配置
+  - 禁用新权限：`no-new-privileges:true`
 
-章节来源
+**章节来源**
 - [docker-compose.yml](file://docker-compose.yml#L25-L44)
 
 ### Dockerfile 多阶段构建与关键指令
@@ -237,11 +265,11 @@ B --> C["生产阶段<br/>仅生产依赖 + 复制产物 + 非 root 用户"]
 C --> D["暴露端口/健康检查/启动"]
 ```
 
-图表来源
+**图表来源**
 - [apps/backend/Dockerfile](file://apps/backend/Dockerfile#L1-L81)
 - [apps/frontend/Dockerfile](file://apps/frontend/Dockerfile#L1-L65)
 
-章节来源
+**章节来源**
 - [apps/backend/Dockerfile](file://apps/backend/Dockerfile#L1-L81)
 - [apps/frontend/Dockerfile](file://apps/frontend/Dockerfile#L1-L65)
 
@@ -265,10 +293,10 @@ NET --> PG
 NET --> RD
 ```
 
-图表来源
+**图表来源**
 - [docker-compose.yml](file://docker-compose.yml#L1-L108)
 
-章节来源
+**章节来源**
 - [docker-compose.yml](file://docker-compose.yml#L1-L108)
 
 ## 性能考虑
@@ -284,10 +312,13 @@ NET --> RD
   - SPA 路由回退避免 404
 - 运行时安全
   - 非 root 用户运行（后端与前端）
+  - 禁用新权限（`no-new-privileges:true`）
+  - 前端容器启用只读文件系统
+  - 使用 tmpfs 挂载临时目录（如 `/tmp`, `/var/run`, `/var/cache/nginx`），提升性能并防止持久化
 - 健康检查
   - 通过健康检查确保服务可用性，便于编排与自动恢复
 
-章节来源
+**章节来源**
 - [apps/backend/Dockerfile](file://apps/backend/Dockerfile#L1-L81)
 - [apps/frontend/Dockerfile](file://apps/frontend/Dockerfile#L1-L65)
 - [apps/frontend/nginx.conf](file://apps/frontend/nginx.conf#L1-L59)
@@ -312,8 +343,11 @@ NET --> RD
 - CORS 与代理问题
   - 前端 /api 代理到 backend:3000，确认后端允许来源与凭证
   - 后端 CORS 配置来源于环境变量（CORS_ORIGIN），请确保其与前端访问域名一致
+- 安全配置问题
+  - 若容器因 `read_only` 或权限问题无法启动，检查是否需要写入特定目录，并通过 tmpfs 或卷挂载解决
+  - 确保非 root 用户对所需目录有适当权限
 
-章节来源
+**章节来源**
 - [docker-compose.yml](file://docker-compose.yml#L1-L108)
 - [apps/frontend/nginx.conf](file://apps/frontend/nginx.conf#L1-L59)
 - [apps/backend/src/main.ts](file://apps/backend/src/main.ts#L1-L94)
@@ -324,6 +358,7 @@ NET --> RD
 - 为数据库与 Redis 配置持久化卷
 - 使用健康检查与重启策略保障可用性
 - 通过 Nginx 提升静态资源性能与安全性
+- 启用资源限制、安全配置、非 root 用户运行和 tmpfs 挂载，提升系统安全性与稳定性
 
 ## 附录
 
@@ -338,7 +373,7 @@ NET --> RD
   - docker compose down
   - docker compose down -v --rmi local（清理卷与本地镜像）
 
-章节来源
+**章节来源**
 - [package.json](file://package.json#L1-L51)
 
 ### 环境变量与覆盖文件
@@ -355,7 +390,7 @@ NET --> RD
 - 在 docker-compose 中，environment 字段会覆盖 .env 中的同名变量
 - 建议在不同环境使用不同的 .env 文件或通过 CI/CD 注入环境变量
 
-章节来源
+**章节来源**
 - [.env.docker.example](file://.env.docker.example#L1-L72)
 - [.env.example](file://.env.example#L1-L51)
 - [docker-compose.yml](file://docker-compose.yml#L1-L108)
@@ -377,7 +412,7 @@ NET --> RD
   - 端口：6379（容器内）
   - 健康检查：redis-cli ping
 
-章节来源
+**章节来源**
 - [docker-compose.yml](file://docker-compose.yml#L1-L108)
 - [apps/frontend/nginx.conf](file://apps/frontend/nginx.conf#L1-L59)
 
@@ -386,7 +421,7 @@ NET --> RD
 - 前端依赖后端健康
 - 建议在生产中增加数据库迁移与初始化脚本（可在后端启动前执行）
 
-章节来源
+**章节来源**
 - [docker-compose.yml](file://docker-compose.yml#L45-L100)
 
 ### Nginx 与后端交互流程
@@ -403,6 +438,6 @@ U->>N : "请求 /static/xxx"
 N-->>U : "静态资源"
 ```
 
-图表来源
+**图表来源**
 - [apps/frontend/nginx.conf](file://apps/frontend/nginx.conf#L1-L59)
 - [docker-compose.yml](file://docker-compose.yml#L78-L100)

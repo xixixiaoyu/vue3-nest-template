@@ -13,6 +13,7 @@
 - [auth.schema.ts](file://packages/shared/src/schemas/auth.schema.ts)
 - [index.ts](file://apps/frontend/src/api/index.ts)
 - [all-exceptions.filter.ts](file://apps/backend/src/common/filters/all-exceptions.filter.ts)
+- [transform.interceptor.ts](file://apps/backend/src/common/interceptors/transform.interceptor.ts)
 </cite>
 
 ## 目录
@@ -43,7 +44,7 @@ Swagger 文档由 `@nestjs/swagger` 装饰器（如 `@ApiTags`、`@ApiOperation`
 
 ## API 响应格式
 
-所有 API 接口遵循统一的响应格式，确保前端能够一致地处理成功和错误响应。
+所有 API 接口遵循统一的响应格式，确保前端能够一致地处理成功和错误响应。后端通过 `TransformInterceptor` 拦截器自动包装成功响应，通过 `AllExceptionsFilter` 过滤器处理异常响应。
 
 ### 成功响应格式
 ```json
@@ -66,6 +67,64 @@ Swagger 文档由 `@nestjs/swagger` 装饰器（如 `@ApiTags`、`@ApiOperation`
 }
 ```
 
+### 统一响应接口定义
+后端和前端共享统一的 TypeScript 接口定义，位于 `packages/shared/src/dto/common.dto.ts`。
+
+#### ApiResponse<T>
+通用 API 响应格式接口，用于包装所有成功和失败的响应。
+
+```typescript
+/**
+ * 通用 API 响应格式
+ */
+export interface ApiResponse<T = unknown> {
+  /** 是否成功 */
+  success: boolean
+  /** 响应数据 */
+  data: T
+  /** 消息描述 */
+  message?: string
+  /** 时间戳 */
+  timestamp: string
+}
+```
+
+#### PaginatedResponse<T>
+分页响应格式接口，用于包装分页查询结果。
+
+```typescript
+/**
+ * 分页响应格式
+ */
+export interface PaginatedResponse<T> {
+  /** 数据列表 */
+  items: T[]
+  /** 总数 */
+  total: number
+  /** 当前页码 */
+  page: number
+  /** 每页数量 */
+  pageSize: number
+  /** 总页数 */
+  totalPages: number
+}
+```
+
+#### PaginationQuery
+分页查询参数接口，用于定义分页查询的输入参数。
+
+```typescript
+/**
+ * 分页查询参数
+ */
+export interface PaginationQuery {
+  /** 页码 */
+  page?: number
+  /** 每页数量 */
+  pageSize?: number
+}
+```
+
 #### 响应字段说明
 | 字段名 | 类型 | 说明 |
 |--------|------|------|
@@ -74,9 +133,16 @@ Swagger 文档由 `@nestjs/swagger` 装饰器（如 `@ApiTags`、`@ApiOperation`
 | `message` | string | 消息描述 |
 | `timestamp` | string | 时间戳（ISO 8601 格式） |
 | `statusCode` | number | HTTP 状态码（仅错误响应包含） |
+| `items` | T[] | 数据列表（仅分页响应包含） |
+| `total` | number | 总数（仅分页响应包含） |
+| `page` | number | 当前页码（仅分页响应包含） |
+| `pageSize` | number | 每页数量（仅分页响应包含） |
+| `totalPages` | number | 总页数（仅分页响应包含） |
 
 **Section sources**
-- [common.dto.ts](file://packages/shared/src/dto/common.dto.ts#L4-L13)
+- [common.dto.ts](file://packages/shared/src/dto/common.dto.ts#L4-L39)
+- [transform.interceptor.ts](file://apps/backend/src/common/interceptors/transform.interceptor.ts#L8-L27)
+- [all-exceptions.filter.ts](file://apps/backend/src/common/filters/all-exceptions.filter.ts#L22-L27)
 
 ## 认证 API
 
@@ -269,6 +335,7 @@ const response = await api.createUser({
 - 非 GET 请求自动添加 CSRF token（从 cookie 读取）
 - 响应拦截器自动处理 401 错误（清除 token）
 - 基于 axios 的 HTTP 客户端，超时时间为 10 秒
+- 使用 `ApiResponse<T>` 接口进行类型定义，确保类型安全
 
 **Section sources**
 - [index.ts](file://apps/frontend/src/api/index.ts)
