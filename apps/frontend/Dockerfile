@@ -3,15 +3,11 @@
 # ============================================
 FROM node:20-alpine AS base
 
-# Configure China npm registry
-RUN npm config set registry https://registry.npmmirror.com
-
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
-RUN pnpm config set registry https://registry.npmmirror.com
 WORKDIR /app
 
-# Copy workspace configuration
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+# Copy workspace configuration (includes .npmrc for registry config)
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json .npmrc ./
 COPY apps/frontend/package.json ./apps/frontend/
 COPY packages/shared/package.json ./packages/shared/
 
