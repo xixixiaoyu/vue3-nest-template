@@ -3,11 +3,7 @@
 # ============================================
 FROM node:20-alpine AS base
 
-# Configure China npm registry
-RUN npm config set registry https://registry.npmmirror.com
-
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
-RUN pnpm config set registry https://registry.npmmirror.com
 WORKDIR /app
 
 # Copy workspace configuration
@@ -45,12 +41,7 @@ FROM node:20-alpine AS production
 # Install build tools for native modules (bcrypt etc.)
 RUN apk add --no-cache python3 make g++
 
-# Configure China npm registry and binary mirrors via ENV (compatible with npm 10+)
-ENV npm_config_registry=https://registry.npmmirror.com/
-ENV npm_config_bcrypt_binary_host_mirror=https://npmmirror.com/mirrors/bcrypt/
-
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
-RUN pnpm config set registry https://registry.npmmirror.com
 
 # Create non-root user for security
 RUN addgroup --system --gid 1001 nodejs && \
@@ -66,16 +57,13 @@ COPY packages/shared/package.json ./packages/shared/
 # Install production dependencies only (ignore scripts to skip husky etc.)
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
-# Copy Prisma schema
+# Copy Prisma schema and generate client in production stage
 COPY apps/backend/prisma ./apps/backend/prisma
+RUN cd apps/backend && npx prisma generate
 
 # Copy built application from builder
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 COPY --from=builder /app/packages/shared ./packages/shared
-
-# Copy generated Prisma client from builder (avoid reinstalling prisma CLI)
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
 
 # Change ownership to non-root user
 RUN chown -R nestjs:nodejs /app
