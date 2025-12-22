@@ -42,8 +42,12 @@ RUN pnpm --filter @my-app/backend build
 # ============================================
 FROM node:20-alpine AS production
 
-# Configure China npm registry
+# Install build tools for native modules (bcrypt etc.)
+RUN apk add --no-cache python3 make g++
+
+# Configure China npm registry and binary mirrors
 RUN npm config set registry https://registry.npmmirror.com
+RUN npm config set bcrypt_binary_host_mirror https://npmmirror.com/mirrors/bcrypt/
 
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 RUN pnpm config set registry https://registry.npmmirror.com
@@ -59,8 +63,8 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/backend/package.json ./apps/backend/
 COPY packages/shared/package.json ./packages/shared/
 
-# Install production dependencies only
-RUN pnpm install --frozen-lockfile --prod
+# Install production dependencies only (ignore scripts to skip husky etc.)
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
 # Copy Prisma schema and generate client
 COPY apps/backend/prisma ./apps/backend/prisma
