@@ -1,6 +1,10 @@
 # Docker Compose 开发环境配置
 # 支持代码热更新：修改代码后容器内自动重载
 #
+# 前置条件（在宿主机执行）：
+#   pnpm install
+#   pnpm --filter @my-app/shared build
+#
 # 使用方式：
 #   docker compose -f docker-compose.dev.yml up -d
 #   docker compose -f docker-compose.dev.yml logs -f backend frontend
@@ -57,7 +61,7 @@ services:
     image: node:20-alpine
     container_name: myapp-backend-dev
     restart: unless-stopped
-    working_dir: /app
+    working_dir: /app/apps/backend
     ports:
       - '3000:3000'
     environment:
@@ -100,14 +104,11 @@ services:
       # 文件上传
       UPLOAD_MAX_SIZE: ${UPLOAD_MAX_SIZE:-10485760}
       UPLOAD_MAX_FILES: ${UPLOAD_MAX_FILES:-10}
+      # Prisma 引擎路径（使用宿主机已生成的）
+      PRISMA_QUERY_ENGINE_LIBRARY: /app/node_modules/.prisma/client/libquery_engine-linux-musl-openssl-3.0.x.so.node
     volumes:
-      # 挂载整个项目目录以支持 monorepo 依赖解析
+      # 直接挂载整个项目目录（使用宿主机已安装的依赖）
       - .:/app
-      # 排除 node_modules，使用容器内安装的依赖
-      - backend_node_modules:/app/node_modules
-      - backend_app_node_modules:/app/apps/backend/node_modules
-      - shared_node_modules:/app/packages/shared/node_modules
-      - frontend_node_modules:/app/apps/frontend/node_modules
     depends_on:
       postgres:
         condition: service_healthy
@@ -115,15 +116,13 @@ services:
         condition: service_healthy
     networks:
       - myapp-network-dev
-    # 启动命令：安装依赖 + 构建共享包 + 生成 Prisma Client + 启动开发服务器
+    # 启动命令：生成 Linux 版 Prisma Client + 启动开发服务器
     command: >
       sh -c "
         corepack enable &&
         corepack prepare pnpm@9.15.0 --activate &&
-        pnpm install --frozen-lockfile &&
-        pnpm --filter @my-app/shared build &&
-        pnpm --filter @my-app/backend prisma:generate &&
-        pnpm --filter @my-app/backend dev
+        npx prisma generate &&
+        pnpm dev
       "
 
   # ============================================
@@ -133,7 +132,7 @@ services:
     image: node:20-alpine
     container_name: myapp-frontend-dev
     restart: unless-stopped
-    working_dir: /app
+    working_dir: /app/apps/frontend
     ports:
       - '5173:5173'
     environment:
@@ -141,25 +140,18 @@ services:
       # Vite 开发服务器配置
       VITE_API_BASE_URL: http://localhost:3000
     volumes:
-      # 挂载整个项目目录以支持 monorepo 依赖解析
+      # 直接挂载整个项目目录（使用宿主机已安装的依赖）
       - .:/app
-      # 排除 node_modules，使用容器内安装的依赖
-      - backend_node_modules:/app/node_modules
-      - backend_app_node_modules:/app/apps/backend/node_modules
-      - shared_node_modules:/app/packages/shared/node_modules
-      - frontend_node_modules:/app/apps/frontend/node_modules
     depends_on:
       - backend
     networks:
       - myapp-network-dev
-    # 启动命令：安装依赖 + 构建共享包 + 启动开发服务器（需要配置 host 以便外部访问）
+    # 启动命令：直接启动 Vite 开发服务器
     command: >
       sh -c "
         corepack enable &&
         corepack prepare pnpm@9.15.0 --activate &&
-        pnpm install --frozen-lockfile &&
-        pnpm --filter @my-app/shared build &&
-        pnpm --filter @my-app/frontend dev --host 0.0.0.0
+        pnpm dev --host 0.0.0.0
       "
 
 networks:
@@ -169,8 +161,3 @@ networks:
 volumes:
   postgres_data_dev:
   redis_data_dev:
-  # 用于隔离容器内的 node_modules
-  backend_node_modules:
-  backend_app_node_modules:
-  shared_node_modules:
-  frontend_node_modules:
