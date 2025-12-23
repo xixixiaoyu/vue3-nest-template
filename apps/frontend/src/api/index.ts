@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { User, ApiResponse } from '@my-app/shared'
+import type { User, ApiResponse, AuthResponse, RegisterInput, LoginInput } from '@my-app/shared'
 
 /**
  * HTTP 客户端实例
@@ -84,6 +84,49 @@ export const api = {
     password: string
   }): Promise<ApiResponse<User>> {
     const { data } = await httpClient.post<ApiResponse<User>>('/users', userData)
+    return data
+  },
+
+  /**
+   * 用户登录
+   */
+  async login(credentials: LoginInput): Promise<ApiResponse<AuthResponse>> {
+    const { data } = await httpClient.post<ApiResponse<AuthResponse>>('/auth/login', credentials)
+    return data
+  },
+
+  /**
+   * 用户注册
+   */
+  async register(userData: RegisterInput): Promise<ApiResponse<AuthResponse>> {
+    const { data } = await httpClient.post<ApiResponse<AuthResponse>>('/auth/register', userData)
+    return data
+  },
+
+  /**
+   * 请求密码重置
+   */
+  async forgotPassword(email: string): Promise<ApiResponse<{ message: string }>> {
+    const { data } = await httpClient.post<ApiResponse<{ message: string }>>(
+      '/auth/forgot-password',
+      {
+        email,
+      },
+    )
+    return data
+  },
+
+  /**
+   * 重置密码
+   */
+  async resetPassword(token: string, password: string): Promise<ApiResponse<{ message: string }>> {
+    const { data } = await httpClient.post<ApiResponse<{ message: string }>>(
+      '/auth/reset-password',
+      {
+        token,
+        password,
+      },
+    )
     return data
   },
 }

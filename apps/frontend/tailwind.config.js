@@ -54,6 +54,17 @@ export default {
           4: 'hsl(var(--chart-4))',
           5: 'hsl(var(--chart-5))',
         },
+        warm: {
+          bg: '#FAF8F3',
+          card: '#FFFFFF',
+          primary: '#D4A574',
+          'primary-hover': '#C89454',
+          text: '#3A3A3A',
+          'text-secondary': '#8B8680',
+          border: '#E8E4DD',
+          error: '#D97757',
+          success: '#90B494',
+        },
       },
       borderRadius: {
         xl: 'calc(var(--radius) + 4px)',
@@ -94,12 +105,29 @@ export default {
             height: '0',
           },
         },
+        'fade-in-up': {
+          from: {
+            opacity: '0',
+            transform: 'translateY(50px)',
+          },
+          to: {
+            opacity: '1',
+            transform: 'translateY(0)',
+          },
+        },
+        shake: {
+          '0%, 100%': { transform: 'translateX(0)' },
+          '10%, 30%, 50%, 70%, 90%': { transform: 'translateX(-5px)' },
+          '20%, 40%, 60%, 80%': { transform: 'translateX(5px)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'collapsible-down': 'collapsible-down 0.2s ease-out',
         'collapsible-up': 'collapsible-up 0.2s ease-out',
+        'fade-in-up': 'fade-in-up 0.6s ease-out',
+        shake: 'shake 0.3s ease-out',
       },
     },
   },

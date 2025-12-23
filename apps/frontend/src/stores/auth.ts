@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { httpClient } from '../api'
-import type { User, LoginInput, AuthResponse } from '@my-app/shared'
+import { api } from '../api'
+import type { User, LoginInput, RegisterInput } from '@my-app/shared'
 
 /**
  * 认证状态管理
@@ -27,13 +27,72 @@ export const useAuthStore = defineStore(
       error.value = null
 
       try {
-        const { data } = await httpClient.post<AuthResponse>('/auth/login', credentials)
-        token.value = data.accessToken
-        user.value = data.user
+        const response = await api.login(credentials)
+        token.value = response.data.accessToken
+        user.value = response.data.user
         return true
       } catch (e: unknown) {
         const err = e as { response?: { data?: { message?: string } } }
         error.value = err.response?.data?.message || '登录失败'
+        return false
+      } finally {
+        loading.value = false
+      }
+    }
+
+    /**
+     * 注册
+     */
+    async function register(userData: RegisterInput): Promise<boolean> {
+      loading.value = true
+      error.value = null
+
+      try {
+        const response = await api.register(userData)
+        token.value = response.data.accessToken
+        user.value = response.data.user
+        return true
+      } catch (e: unknown) {
+        const err = e as { response?: { data?: { message?: string } } }
+        error.value = err.response?.data?.message || '注册失败'
+        return false
+      } finally {
+        loading.value = false
+      }
+    }
+
+    /**
+     * 请求密码重置
+     */
+    async function forgotPassword(email: string): Promise<boolean> {
+      loading.value = true
+      error.value = null
+
+      try {
+        await api.forgotPassword(email)
+        return true
+      } catch (e: unknown) {
+        const err = e as { response?: { data?: { message?: string } } }
+        error.value = err.response?.data?.message || '请求失败'
+        return false
+      } finally {
+        loading.value = false
+      }
+    }
+
+    /**
+     * 重置密码
+     */
+    async function resetPassword(token: string, password: string): Promise<boolean> {
+      loading.value = true
+      error.value = null
+
+      try {
+        await api.resetPassword(token, password)
+        return true
+      } catch (e: unknown) {
+        const err = e as { response?: { data?: { message?: string } } }
+        error.value = err.response?.data?.message || '重置密码失败'
         return false
       } finally {
         loading.value = false
@@ -47,12 +106,9 @@ export const useAuthStore = defineStore(
       if (!token.value) return
 
       try {
-        const { data } = await httpClient.get<User>('/auth/me', {
-          headers: { Authorization: `Bearer ${token.value}` },
-        })
+        const { data } = await api.getUser(user.value?.id || 0)
         user.value = data
       } catch {
-        // Token 可能已失效
         logout()
       }
     }
@@ -83,6 +139,9 @@ export const useAuthStore = defineStore(
       isAuthenticated,
       // 方法
       login,
+      register,
+      forgotPassword,
+      resetPassword,
       logout,
       fetchCurrentUser,
       clearError,

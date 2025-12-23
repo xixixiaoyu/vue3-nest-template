@@ -84,6 +84,23 @@ export const RefreshTokenSchema = z.object({
   refreshToken: z.string({ required_error: '刷新令牌不能为空' }).min(1, '刷新令牌不能为空'),
 })
 
+/**
+ * 找回密码请求 Schema
+ */
+export const ForgotPasswordSchema = z.object({
+  email: emailSchema,
+})
+
+/**
+ * 重置密码 Schema
+ */
+export const ResetPasswordSchema = z.object({
+  token: z.string({ required_error: '重置令牌不能为空' }).min(1, '重置令牌不能为空'),
+  password: passwordSchema
+    .regex(/[A-Za-z]/, '密码必须包含至少一个字母')
+    .regex(/[0-9]/, '密码必须包含至少一个数字'),
+})
+
 // 从 Zod Schema 推断 TypeScript 类型
 export type LoginInput = z.infer<typeof LoginSchema>
 export type RegisterInput = z.infer<typeof RegisterSchema>
@@ -91,3 +108,5 @@ export type UpdateUserInput = z.infer<typeof UpdateUserSchema>
 export type User = z.infer<typeof UserSchema>
 export type AuthResponse = z.infer<typeof AuthResponseSchema>
 export type RefreshTokenInput = z.infer<typeof RefreshTokenSchema>
+export type ForgotPasswordInput = z.infer<typeof ForgotPasswordSchema>
+export type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>

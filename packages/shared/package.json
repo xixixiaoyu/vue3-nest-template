@@ -23,7 +23,7 @@
   ],
   "scripts": {
     "build": "tsup",
-    "dev": "tsup --watch",
+    "dev": "tsup",
     "clean": "rm -rf dist"
   },
   "dependencies": {
