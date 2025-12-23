@@ -1,0 +1,176 @@
+# Docker Compose 开发环境配置
+# 支持代码热更新：修改代码后容器内自动重载
+#
+# 使用方式：
+#   docker compose -f docker-compose.dev.yml up -d
+#   docker compose -f docker-compose.dev.yml logs -f backend frontend
+#   docker compose -f docker-compose.dev.yml down
+
+services:
+  # ============================================
+  # PostgreSQL Database
+  # ============================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: myapp-postgres-dev
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-myapp}
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - myapp-network-dev
+
+  # ============================================
+  # Redis Cache & Queue
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: myapp-redis-dev
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy noeviction
+    volumes:
+      - redis_data_dev:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - myapp-network-dev
+
+  # ============================================
+  # Backend (NestJS) - 开发模式，支持热更新
+  # ============================================
+  backend:
+    image: node:20-alpine
+    container_name: myapp-backend-dev
+    restart: unless-stopped
+    working_dir: /app
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-myapp}?schema=public
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_DB: ${REDIS_DB:-0}
+      REDIS_KEY_PREFIX: ${REDIS_KEY_PREFIX:-app:}
+      REDIS_DEFAULT_TTL: ${REDIS_DEFAULT_TTL:-300}
+      # 日志 & CORS
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      # JWT
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-key-change-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      # 速率限制 (开发环境放宽)
+      THROTTLE_SHORT_TTL: ${THROTTLE_SHORT_TTL:-1000}
+      THROTTLE_SHORT_LIMIT: ${THROTTLE_SHORT_LIMIT:-100}
+      THROTTLE_MEDIUM_TTL: ${THROTTLE_MEDIUM_TTL:-10000}
+      THROTTLE_MEDIUM_LIMIT: ${THROTTLE_MEDIUM_LIMIT:-200}
+      THROTTLE_LONG_TTL: ${THROTTLE_LONG_TTL:-60000}
+      THROTTLE_LONG_LIMIT: ${THROTTLE_LONG_LIMIT:-1000}
+      # 邮件
+      MAIL_HOST: ${MAIL_HOST:-smtp.example.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_SECURE: ${MAIL_SECURE:-false}
+      MAIL_USER: ${MAIL_USER:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-"No Reply" <noreply@example.com>}
+      # S3 存储
+      S3_BUCKET: ${S3_BUCKET:-my-app-uploads}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      # 文件上传
+      UPLOAD_MAX_SIZE: ${UPLOAD_MAX_SIZE:-10485760}
+      UPLOAD_MAX_FILES: ${UPLOAD_MAX_FILES:-10}
+    volumes:
+      # 挂载整个项目目录以支持 monorepo 依赖解析
+      - .:/app
+      # 排除 node_modules，使用容器内安装的依赖
+      - backend_node_modules:/app/node_modules
+      - backend_app_node_modules:/app/apps/backend/node_modules
+      - shared_node_modules:/app/packages/shared/node_modules
+      - frontend_node_modules:/app/apps/frontend/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - myapp-network-dev
+    # 启动命令：安装依赖 + 构建共享包 + 生成 Prisma Client + 启动开发服务器
+    command: >
+      sh -c "
+        corepack enable &&
+        corepack prepare pnpm@9.15.0 --activate &&
+        pnpm install --frozen-lockfile &&
+        pnpm --filter @my-app/shared build &&
+        pnpm --filter @my-app/backend prisma:generate &&
+        pnpm --filter @my-app/backend dev
+      "
+
+  # ============================================
+  # Frontend (Vue + Vite) - 开发模式，支持热更新
+  # ============================================
+  frontend:
+    image: node:20-alpine
+    container_name: myapp-frontend-dev
+    restart: unless-stopped
+    working_dir: /app
+    ports:
+      - '5173:5173'
+    environment:
+      NODE_ENV: development
+      # Vite 开发服务器配置
+      VITE_API_BASE_URL: http://localhost:3000
+    volumes:
+      # 挂载整个项目目录以支持 monorepo 依赖解析
+      - .:/app
+      # 排除 node_modules，使用容器内安装的依赖
+      - backend_node_modules:/app/node_modules
+      - backend_app_node_modules:/app/apps/backend/node_modules
+      - shared_node_modules:/app/packages/shared/node_modules
+      - frontend_node_modules:/app/apps/frontend/node_modules
+    depends_on:
+      - backend
+    networks:
+      - myapp-network-dev
+    # 启动命令：安装依赖 + 构建共享包 + 启动开发服务器（需要配置 host 以便外部访问）
+    command: >
+      sh -c "
+        corepack enable &&
+        corepack prepare pnpm@9.15.0 --activate &&
+        pnpm install --frozen-lockfile &&
+        pnpm --filter @my-app/shared build &&
+        pnpm --filter @my-app/frontend dev --host 0.0.0.0
+      "
+
+networks:
+  myapp-network-dev:
+    driver: bridge
+
+volumes:
+  postgres_data_dev:
+  redis_data_dev:
+  # 用于隔离容器内的 node_modules
+  backend_node_modules:
+  backend_app_node_modules:
+  shared_node_modules:
+  frontend_node_modules:
