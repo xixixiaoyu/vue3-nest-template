@@ -126,6 +126,14 @@ HTTP 响应
 - **XSS 防护**: SanitizeInterceptor 自动清理
 - **JWT 认证**: accessToken + refreshToken 双令牌
 
+### 三层架构
+
+系统严格遵循控制器-服务-数据访问的三层架构：
+
+- **控制器层**: 处理 HTTP 请求和响应，仅负责请求参数解析和响应格式化
+- **服务层**: 封装业务逻辑，处理数据验证、转换和业务规则
+- **数据访问层**: PrismaService 直接与数据库交互，提供类型安全的数据库操作
+
 ## 前端架构
 
 ### 核心技术
@@ -170,6 +178,28 @@ export const useAuthStore = defineStore('auth', () => {
 })
 ```
 
+### 应用初始化流程
+
+```
+main.ts
+  ↓
+createApp(App)
+  ↓
+createPinia() + pinia.use(persistedstate)
+  ↓
+createQueryClient()
+  ↓
+app.use(Pinia)
+  ↓
+app.use(Router)
+  ↓
+app.use(I18n)
+  ↓
+app.use(VueQuery, client)
+  ↓
+app.mount('#app')
+```
+
 ## 共享包设计
 
 ### 单一可信源原则
@@ -196,6 +226,14 @@ packages/shared/src/
 │   └── user.utils.ts
 └── index.ts       # 统一导出
 ```
+
+### Schema 定义与复用
+
+共享包采用分层设计，定义可复用的基础字段规则（如 `emailSchema`、`passwordSchema`），然后组合成完整的对象 Schema（如 `LoginSchema`、`RegisterSchema`）。这种设计避免了重复代码，确保验证逻辑的一致性。
+
+### 自动类型推断
+
+通过 `z.infer<typeof Schema>` 语法，从每个 Zod Schema 自动推断出对应的 TypeScript 类型。例如，`LoginInput` 类型就是从 `LoginSchema` 推断出来的，保证了类型定义与验证规则的绝对同步。
 
 ## 环境配置
 
@@ -289,6 +327,34 @@ pnpm --filter @my-app/frontend build:android
 - 业务逻辑放在 Service 层
 - 使用 DTO 进行输入验证
 
+### 提交规范
+
+- 提交前必须运行 `pnpm format` 和 `pnpm lint`
+- Husky + lint-staged 自动执行质量检查
+- 提交信息建议采用简洁明了的描述
+
+## 性能考虑
+
+### 后端优化
+
+- **响应压缩**: 启用 gzip 压缩，对大于阈值的响应生效
+- **日志级别**: 开发环境使用 pino-pretty 输出，生产环境使用 JSON 日志
+- **Redis 缓存**: 缓存高频访问数据，降低数据库负载
+- **BullMQ 队列**: 异步处理耗时任务，避免阻塞主线程
+- **健康检查**: Docker Compose 配置健康检查，确保服务可用性
+
+### 前端优化
+
+- **代码分割**: 路由采用动态导入，减少首屏加载体积
+- **数据缓存**: TanStack Query 提供智能缓存机制（`staleTime`），避免重复请求
+- **状态管理**: Pinia 确保数据单一来源，减少不必要的组件重新渲染
+- **PWA**: Service Worker 实现离线访问和资源缓存
+
+### 构建优化
+
+- **Turbo**: 并行执行任务，减少重复构建与检查时间
+- **pnpm Monorepo**: 高效的依赖管理和任务编排
+
 ## 故障排除
 
 | 问题 | 解决方案 |
@@ -299,9 +365,24 @@ pnpm --filter @my-app/frontend build:android
 | 401 未授权 | 检查 token 是否有效，确认 CSRF Token 正确 |
 | 速率限制触发 | 等待时间窗口重置或调整限流配置 |
 | Swagger 无法访问 | 确认后端已启动，检查 CORS 配置 |
+| 页面空白/白屏 | 检查 `main.ts` 中 `app.mount('#app')` 的选择器是否与 `index.html` 一致 |
+| 路由无法跳转 | 确认 `router/index.ts` 中的路径配置正确，且组件路径无误 |
+| 状态未持久化 | 检查 `pinia-plugin-persistedstate` 是否已正确安装和使用 |
+| API 请求 401 错误 | 检查 `httpClient` 的请求拦截器是否正确添加了 `Authorization` 头 |
+| 提交被拒绝（Husky） | 确认已安装依赖并初始化钩子，重新运行 `pnpm format` 与 `pnpm lint` |
 
 ## API 文档
 
 - **Swagger**: http://localhost:3000/api/docs
 - **健康检查**: http://localhost:3000/api/health
 - **WebSocket**: ws://localhost:3000
+
+## 开发流程
+
+1. **克隆仓库并进入项目目录**
+2. **安装依赖**: `pnpm install`
+3. **配置环境变量**: 复制 `.env.example` 为 `.env` 并填写配置
+4. **启动数据库服务**: `docker compose up postgres redis -d`
+5. **初始化数据库**: `pnpm db:push`
+6. **启动开发服务器**: `pnpm dev`
+7. **验证服务**: 访问 Swagger 文档和前端页面
