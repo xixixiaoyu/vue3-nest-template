@@ -80,8 +80,6 @@ npx shadcn-vue@latest add <component-name>  # 在 frontend 目录下执行
 
 ### 模块系统
 
-后端采用 NestJS 模块化设计，核心模块包括：
-
 | 模块 | 职责 |
 |------|------|
 | **AuthModule** | JWT + Passport 认证、用户注册、密码重置 |
@@ -97,25 +95,7 @@ npx shadcn-vue@latest add <component-name>  # 在 frontend 目录下执行
 ### 请求处理生命周期
 
 ```
-HTTP 请求
-  ↓
-全局中间件 (Helmet / Cookie Parser / CSRF / Compression)
-  ↓
-路由匹配
-  ↓
-全局守卫 (ThrottlerGuard 速率限制)
-  ↓
-控制器 (Controller)
-  ↓
-服务层 (Service)
-  ↓
-数据访问层 (PrismaService)
-  ↓
-全局拦截器 (TransformInterceptor / SanitizeInterceptor)
-  ↓
-全局过滤器 (AllExceptionsFilter)
-  ↓
-HTTP 响应
+HTTP 请求 → 全局中间件 → 路由匹配 → 全局守卫 → 控制器 → 服务层 → 数据访问层 → 全局拦截器 → 全局过滤器 → HTTP 响应
 ```
 
 ### 安全特性
@@ -128,9 +108,7 @@ HTTP 响应
 
 ### 三层架构
 
-系统严格遵循控制器-服务-数据访问的三层架构：
-
-- **控制器层**: 处理 HTTP 请求和响应，仅负责请求参数解析和响应格式化
+- **控制器层**: 处理 HTTP 请求/响应，仅负责参数解析和响应格式化
 - **服务层**: 封装业务逻辑，处理数据验证、转换和业务规则
 - **数据访问层**: PrismaService 直接与数据库交互，提供类型安全的数据库操作
 
@@ -160,58 +138,18 @@ src/
 └── views/         # 页面视图
 ```
 
-### 状态管理
-
-```typescript
-// auth.ts - 认证状态
-export const useAuthStore = defineStore('auth', () => {
-  const token = ref<string | null>(null)
-  const user = ref<User | null>(null)
-  const isAuthenticated = computed(() => !!token.value)
-
-  const login = async (credentials: LoginInput) => { /* ... */ }
-  const logout = () => { /* ... */ }
-
-  return { token, user, isAuthenticated, login, logout }
-}, {
-  persist: { paths: ['token'] }  // 仅持久化 token
-})
-```
-
 ### 应用初始化流程
 
 ```
-main.ts
-  ↓
-createApp(App)
-  ↓
-createPinia() + pinia.use(persistedstate)
-  ↓
-createQueryClient()
-  ↓
-app.use(Pinia)
-  ↓
-app.use(Router)
-  ↓
-app.use(I18n)
-  ↓
-app.use(VueQuery, client)
-  ↓
-app.mount('#app')
+main.ts → createApp(App) → createPinia() + persistedstate → createQueryClient() → app.use(Pinia) → app.use(Router) → app.use(I18n) → app.use(VueQuery) → app.mount('#app')
 ```
 
 ## 共享包设计
 
 ### 单一可信源原则
 
-共享包 `@my-app/shared` 是前后端共享类型和验证逻辑的唯一来源：
-
 ```
-Zod Schema (shared)
-    ↓
-    ├─→ 后端 DTO (nestjs-zod)
-    ├─→ 前端表单 (VeeValidate)
-    └─→ TypeScript 类型 (z.infer)
+Zod Schema (shared) → 后端 DTO (nestjs-zod) → 前端表单 (VeeValidate) → TypeScript 类型 (z.infer)
 ```
 
 ### 目录结构
@@ -219,49 +157,29 @@ Zod Schema (shared)
 ```
 packages/shared/src/
 ├── schemas/       # Zod Schema 定义
-│   └── auth.schema.ts
 ├── dto/           # 通用 DTO
-│   └── common.dto.ts
 ├── utils/         # 工具函数
-│   └── user.utils.ts
 └── index.ts       # 统一导出
 ```
 
-### Schema 定义与复用
+### Schema 设计
 
-共享包采用分层设计，定义可复用的基础字段规则（如 `emailSchema`、`passwordSchema`），然后组合成完整的对象 Schema（如 `LoginSchema`、`RegisterSchema`）。这种设计避免了重复代码，确保验证逻辑的一致性。
-
-### 自动类型推断
-
-通过 `z.infer<typeof Schema>` 语法，从每个 Zod Schema 自动推断出对应的 TypeScript 类型。例如，`LoginInput` 类型就是从 `LoginSchema` 推断出来的，保证了类型定义与验证规则的绝对同步。
+定义可复用的基础字段规则（如 `emailSchema`、`passwordSchema`），组合成完整的对象 Schema（如 `LoginSchema`、`RegisterSchema`）。通过 `z.infer<typeof Schema>` 自动推断 TypeScript 类型。
 
 ## 环境配置
 
 ### 必需环境变量
 
 ```bash
-# 数据库
 DATABASE_URL="postgresql://user:password@localhost:5432/myapp"
-
-# Redis
 REDIS_HOST="localhost"
 REDIS_PORT=6379
 REDIS_PASSWORD=""
 REDIS_DB=0
-
-# JWT
 JWT_SECRET="your-secret-key"
 JWT_ACCESS_EXPIRATION="15m"
 JWT_REFRESH_EXPIRATION="7d"
-
-# CORS
 CORS_ORIGIN="http://localhost:5173"
-
-# 邮件（可选）
-SMTP_HOST="smtp.example.com"
-SMTP_PORT=587
-SMTP_USER="user@example.com"
-SMTP_PASSWORD="password"
 ```
 
 ## 部署
@@ -269,31 +187,19 @@ SMTP_PASSWORD="password"
 ### Docker 部署
 
 ```bash
-# 构建并启动所有服务
-docker compose up -d
-
-# 仅启动数据库服务
-docker compose up postgres redis -d
-
-# 查看日志
-docker compose logs -f
-
-# 停止服务
-docker compose down
+docker compose up -d                    # 构建并启动所有服务
+docker compose up postgres redis -d     # 仅启动数据库服务
+docker compose logs -f                  # 查看日志
+docker compose down                     # 停止服务
 ```
 
 ### 跨端构建
 
 ```bash
-# PWA 构建
-pnpm --filter @my-app/frontend build
-
-# Electron 构建
-pnpm --filter @my-app/frontend build:electron
-
-# Capacitor 构建
-pnpm --filter @my-app/frontend build:ios
-pnpm --filter @my-app/frontend build:android
+pnpm --filter @my-app/frontend build         # PWA 构建
+pnpm --filter @my-app/frontend build:electron # Electron 构建
+pnpm --filter @my-app/frontend build:ios     # iOS 构建
+pnpm --filter @my-app/frontend build:android # Android 构建
 ```
 
 ## 注意事项
@@ -331,29 +237,28 @@ pnpm --filter @my-app/frontend build:android
 
 - 提交前必须运行 `pnpm format` 和 `pnpm lint`
 - Husky + lint-staged 自动执行质量检查
-- 提交信息建议采用简洁明了的描述
 
-## 性能考虑
+## 性能优化
 
-### 后端优化
+### 后端
 
-- **响应压缩**: 启用 gzip 压缩，对大于阈值的响应生效
-- **日志级别**: 开发环境使用 pino-pretty 输出，生产环境使用 JSON 日志
-- **Redis 缓存**: 缓存高频访问数据，降低数据库负载
-- **BullMQ 队列**: 异步处理耗时任务，避免阻塞主线程
-- **健康检查**: Docker Compose 配置健康检查，确保服务可用性
+- **响应压缩**: gzip 压缩
+- **日志**: 开发环境 pino-pretty，生产环境 JSON
+- **缓存**: Redis 缓存高频数据
+- **队列**: BullMQ 异步处理耗时任务
+- **健康检查**: Docker Compose 健康检查
 
-### 前端优化
+### 前端
 
-- **代码分割**: 路由采用动态导入，减少首屏加载体积
-- **数据缓存**: TanStack Query 提供智能缓存机制（`staleTime`），避免重复请求
-- **状态管理**: Pinia 确保数据单一来源，减少不必要的组件重新渲染
-- **PWA**: Service Worker 实现离线访问和资源缓存
+- **代码分割**: 路由动态导入
+- **数据缓存**: TanStack Query 智能缓存
+- **状态管理**: Pinia 单一数据源
+- **PWA**: Service Worker 离线缓存
 
-### 构建优化
+### 构建
 
-- **Turbo**: 并行执行任务，减少重复构建与检查时间
-- **pnpm Monorepo**: 高效的依赖管理和任务编排
+- **Turbo**: 并行执行任务，缓存优化
+- **pnpm Monorepo**: 高效依赖管理
 
 ## 故障排除
 
@@ -365,10 +270,10 @@ pnpm --filter @my-app/frontend build:android
 | 401 未授权 | 检查 token 是否有效，确认 CSRF Token 正确 |
 | 速率限制触发 | 等待时间窗口重置或调整限流配置 |
 | Swagger 无法访问 | 确认后端已启动，检查 CORS 配置 |
-| 页面空白/白屏 | 检查 `main.ts` 中 `app.mount('#app')` 的选择器是否与 `index.html` 一致 |
-| 路由无法跳转 | 确认 `router/index.ts` 中的路径配置正确，且组件路径无误 |
-| 状态未持久化 | 检查 `pinia-plugin-persistedstate` 是否已正确安装和使用 |
-| API 请求 401 错误 | 检查 `httpClient` 的请求拦截器是否正确添加了 `Authorization` 头 |
+| 页面空白/白屏 | 检查 `main.ts` 中 `app.mount('#app')` 选择器与 `index.html` 一致 |
+| 路由无法跳转 | 确认 `router/index.ts` 路径配置正确，组件路径无误 |
+| 状态未持久化 | 检查 `pinia-plugin-persistedstate` 是否正确安装和使用 |
+| API 请求 401 错误 | 检查 `httpClient` 请求拦截器是否正确添加 `Authorization` 头 |
 | 提交被拒绝（Husky） | 确认已安装依赖并初始化钩子，重新运行 `pnpm format` 与 `pnpm lint` |
 
 ## API 文档
@@ -379,10 +284,10 @@ pnpm --filter @my-app/frontend build:android
 
 ## 开发流程
 
-1. **克隆仓库并进入项目目录**
-2. **安装依赖**: `pnpm install`
-3. **配置环境变量**: 复制 `.env.example` 为 `.env` 并填写配置
-4. **启动数据库服务**: `docker compose up postgres redis -d`
-5. **初始化数据库**: `pnpm db:push`
-6. **启动开发服务器**: `pnpm dev`
-7. **验证服务**: 访问 Swagger 文档和前端页面
+1. 克隆仓库并进入项目目录
+2. 安装依赖: `pnpm install`
+3. 配置环境变量: 复制 `.env.example` 为 `.env` 并填写配置
+4. 启动数据库服务: `docker compose up postgres redis -d`
+5. 初始化数据库: `pnpm db:push`
+6. 启动开发服务器: `pnpm dev`
+7. 验证服务: 访问 Swagger 文档和前端页面
