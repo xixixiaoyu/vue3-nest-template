@@ -1,7 +1,6 @@
 import js from '@eslint/js'
 import ts from 'typescript-eslint'
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
-import vue from 'eslint-plugin-vue'
 
 /**
  * 根目录通用 ESLint 配置
@@ -10,16 +9,7 @@ import vue from 'eslint-plugin-vue'
 export default [
   js.configs.recommended,
   ...ts.configs.recommended,
-  ...vue.configs['flat/recommended'],
   eslintPluginPrettierRecommended,
-  {
-    files: ['**/*.vue'],
-    languageOptions: {
-      parserOptions: {
-        parser: ts.parser,
-      },
-    },
-  },
   {
     rules: {
       '@typescript-eslint/no-explicit-any': 'warn',

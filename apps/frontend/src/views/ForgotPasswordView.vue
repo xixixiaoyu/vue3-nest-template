@@ -57,7 +57,7 @@ const onSubmit = handleSubmit(async (values) => {
       </router-link>
     </div>
 
-    <form v-else @submit="onSubmit" class="space-y-6">
+    <form v-else class="space-y-6" @submit="onSubmit">
       <div
         v-if="authStore.error"
         class="bg-warm-error/10 border border-warm-error text-warm-error px-4 py-3 rounded-xl text-sm animate-shake"

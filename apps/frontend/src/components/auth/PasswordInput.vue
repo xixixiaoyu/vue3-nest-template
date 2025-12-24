@@ -64,9 +64,9 @@ const passwordStrength = computed(() => {
       />
       <button
         type="button"
-        @click="showPassword = !showPassword"
         class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-warm-text-secondary hover:text-warm-text transition-colors"
         :title="showPassword ? t('password.hide') : t('password.show')"
+        @click="showPassword = !showPassword"
       >
         <component :is="showPassword ? EyeOff : Eye" class="w-5 h-5" />
       </button>

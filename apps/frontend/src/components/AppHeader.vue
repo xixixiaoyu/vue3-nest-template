@@ -34,8 +34,8 @@ function handleLogout() {
             <span class="text-gray-700">{{ t('common.welcome') }}, {{ authStore.user.name }}</span>
           </div>
           <button
-            @click="handleLogout"
             class="text-gray-600 hover:text-primary-600 transition-colors"
+            @click="handleLogout"
           >
             {{ t('common.logout') }}
           </button>
