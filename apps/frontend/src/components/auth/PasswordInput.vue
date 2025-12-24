@@ -89,7 +89,7 @@ const passwordStrength = computed(() => {
       <span class="text-xs text-warm-text-secondary">{{ passwordStrength.text }}</span>
     </div>
 
-    <p v-if="error" class="text-sm text-warm-error animate-shake">
+    <p v-if="error" class="text-sm text-warm-error">
       {{ error }}
     </p>
   </div>

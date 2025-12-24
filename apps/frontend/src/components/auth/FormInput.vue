@@ -39,7 +39,7 @@ const inputValue = computed({
           : 'border-warm-border hover:border-warm-primary/50',
       ]"
     />
-    <p v-if="error" class="text-sm text-warm-error animate-shake">
+    <p v-if="error" class="text-sm text-warm-error">
       {{ error }}
     </p>
   </div>
