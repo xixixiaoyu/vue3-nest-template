@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '@/views/HomeView.vue'
 
 /**
  * 应用路由配置
@@ -9,9 +8,7 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'home',
-      component: HomeView,
-      meta: { title: '首页' },
+      redirect: '/login',
     },
     {
       path: '/login',

@@ -1,23 +1,10 @@
 export default {
   common: {
-    home: 'Home',
     users: 'Users',
     loading: 'Loading...',
     refresh: 'Refresh',
     back: 'Back',
-    backToHome: 'Back to Home',
     language: 'Language',
-  },
-  home: {
-    title: 'Welcome to My App',
-    description: 'A full-stack monorepo template with Vue 3, NestJS, Prisma, and PostgreSQL.',
-    frontend: 'Frontend',
-    frontendDesc: 'Vue 3 + Vite + TypeScript + Tailwind CSS + Pinia + Vue Router',
-    backend: 'Backend',
-    backendDesc: 'NestJS + Prisma + PostgreSQL with RESTful API',
-    shared: 'Shared',
-    sharedDesc: 'TypeScript types and DTOs shared between frontend and backend',
-    viewUsersDemo: 'View Users Demo',
   },
   login: {
     title: 'Sign in to your account',

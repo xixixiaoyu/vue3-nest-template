@@ -1,23 +1,10 @@
 export default {
   common: {
-    home: '首页',
     users: '用户',
     loading: '加载中...',
     refresh: '刷新',
     back: '返回',
-    backToHome: '返回首页',
     language: '语言',
-  },
-  home: {
-    title: '欢迎使用 My App',
-    description: '一个全栈 Monorepo 模板，包含 Vue 3、NestJS、Prisma 和 PostgreSQL。',
-    frontend: '前端',
-    frontendDesc: 'Vue 3 + Vite + TypeScript + Tailwind CSS + Pinia + Vue Router',
-    backend: '后端',
-    backendDesc: 'NestJS + Prisma + PostgreSQL RESTful API',
-    shared: '共享模块',
-    sharedDesc: '前后端共享的 TypeScript 类型和 DTO',
-    viewUsersDemo: '查看用户演示',
   },
   login: {
     title: '登录账户',
