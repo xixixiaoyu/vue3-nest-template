@@ -14,7 +14,7 @@ import PrimaryButton from '@/components/auth/PrimaryButton.vue'
 const router = useRouter()
 const authStore = useAuthStore()
 const { t } = useI18n()
-
+const a = 1
 const RegisterWithConfirmSchema = RegisterSchema.extend({
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
