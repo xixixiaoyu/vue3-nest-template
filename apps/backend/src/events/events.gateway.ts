@@ -74,7 +74,12 @@ export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGate
    */
   @SubscribeMessage('join')
   handleJoin(@MessageBody() data: { room: string }, @ConnectedSocket() client: Socket) {
-    client.join(data.room)
+    const joinPromise = client.join(data.room)
+    if (joinPromise) {
+      joinPromise.catch((err: Error) => {
+        this.logger.error(`加入房间失败: ${data.room}`, err)
+      })
+    }
     this.logger.log(`${client.id} 加入房间: ${data.room}`)
 
     // 通知房间内其他成员
@@ -91,7 +96,12 @@ export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGate
    */
   @SubscribeMessage('leave')
   handleLeave(@MessageBody() data: { room: string }, @ConnectedSocket() client: Socket) {
-    client.leave(data.room)
+    const leavePromise = client.leave(data.room)
+    if (leavePromise) {
+      leavePromise.catch((err: Error) => {
+        this.logger.error(`离开房间失败: ${data.room}`, err)
+      })
+    }
     this.logger.log(`${client.id} 离开房间: ${data.room}`)
 
     // 通知房间内其他成员

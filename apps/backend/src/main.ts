@@ -93,4 +93,7 @@ async function bootstrap() {
   logger.log(`🚀 服务已启动: http://localhost:${port}`, 'Bootstrap')
 }
 
-bootstrap()
+bootstrap().catch((err) => {
+  console.error('应用启动失败:', err)
+  process.exit(1)
+})
