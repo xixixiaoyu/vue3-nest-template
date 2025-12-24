@@ -6,6 +6,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { z } from 'zod'
+import { passwordSchema } from '@my-app/shared'
 import { CheckCircle2, AlertCircle } from 'lucide-vue-next'
 import AuthCard from '@/components/auth/AuthCard.vue'
 import PasswordInput from '@/components/auth/PasswordInput.vue'
@@ -22,10 +23,7 @@ const invalidToken = ref(false)
 
 const ResetPasswordWithConfirmSchema = z
   .object({
-    password: z
-      .string({ required_error: '密码不能为空' })
-      .min(6, '密码至少需要 6 个字符')
-      .max(100, '密码不能超过 100 个字符')
+    password: passwordSchema
       .regex(/[A-Za-z]/, '密码必须包含至少一个字母')
       .regex(/[0-9]/, '密码必须包含至少一个数字'),
     confirmPassword: z.string(),

@@ -109,7 +109,7 @@ export const useAuthStore = defineStore(
       if (!token.value) return
 
       try {
-        const { data } = await api.getUser(user.value?.id || 0)
+        const { data } = await api.getMe()
         user.value = data
       } catch {
         logout()

@@ -158,6 +158,14 @@ export const api = {
   },
 
   /**
+   * 获取当前用户信息
+   */
+  async getMe(): Promise<ApiResponse<User>> {
+    const { data } = await httpClient.get<ApiResponse<User>>('/auth/me')
+    return data
+  },
+
+  /**
    * 用户登录
    */
   async login(credentials: LoginInput): Promise<ApiResponse<AuthResponse>> {

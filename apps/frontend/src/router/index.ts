@@ -60,7 +60,7 @@ router.beforeEach((to) => {
   const authStore = useAuthStore()
 
   // 需要认证的页面
-  const requiresAuth = ['home'].includes(to.name as string)
+  const requiresAuth = ['home', 'users'].includes(to.name as string)
 
   // 从 localStorage 检查 token（作为持久化数据恢复前的后备方案）
   const hasTokenInStorage = () => {
