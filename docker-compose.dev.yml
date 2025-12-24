@@ -141,8 +141,8 @@ services:
       - '5173:5173'
     environment:
       NODE_ENV: development
-      # Vite 开发服务器配置
-      VITE_API_BASE_URL: http://localhost:3000
+      # Vite 开发服务器配置 - 使用 Docker 服务名访问后端
+      VITE_API_BASE_URL: http://backend:3000
     volumes:
       # 挂载项目目录（代码热更新）
       - .:/app
