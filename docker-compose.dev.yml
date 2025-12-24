@@ -9,6 +9,7 @@
 #   docker compose -f docker-compose.dev.yml up -d
 #   docker compose -f docker-compose.dev.yml logs -f backend frontend
 #   docker compose -f docker-compose.dev.yml down
+#   docker compose -f docker-compose.dev.yml restart [service]
 
 services:
   # ============================================
@@ -19,7 +20,7 @@ services:
     container_name: myapp-postgres-dev
     restart: unless-stopped
     ports:
-      - '5432:5432'
+      - '127.0.0.1:5432:5432'
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
@@ -27,12 +28,17 @@ services:
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres}']
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - myapp-network-dev
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
 
   # ============================================
   # Redis Cache & Queue
@@ -42,17 +48,22 @@ services:
     container_name: myapp-redis-dev
     restart: unless-stopped
     ports:
-      - '6379:6379'
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy noeviction
+      - '127.0.0.1:6379:6379'
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy noeviction --requirepass ${REDIS_PASSWORD:-dev-redis-password}
     volumes:
       - redis_data_dev:/data
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD:-dev-redis-password}', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - myapp-network-dev
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
 
   # ============================================
   # Backend (NestJS) - 开发模式，支持热更新
@@ -71,7 +82,7 @@ services:
       # Redis
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-dev-redis-password}
       REDIS_DB: ${REDIS_DB:-0}
       REDIS_KEY_PREFIX: ${REDIS_KEY_PREFIX:-app:}
       REDIS_DEFAULT_TTL: ${REDIS_DEFAULT_TTL:-300}
@@ -118,6 +129,25 @@ services:
         condition: service_healthy
     networks:
       - myapp-network-dev
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost:3000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
     # 启动命令：安装依赖 + 生成 Prisma Client + 启动开发服务器
     command: >
       sh -c "
@@ -149,9 +179,29 @@ services:
       # 挂载 node_modules（容器内安装的依赖）
       - frontend_node_modules:/app/node_modules
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - myapp-network-dev
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost:5173']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
     # 启动命令：安装依赖 + 启动 Vite 开发服务器
     command: >
       sh -c "
