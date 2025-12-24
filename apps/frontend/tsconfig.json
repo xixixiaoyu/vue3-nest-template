@@ -6,8 +6,7 @@
     "moduleResolution": "bundler",
     "jsx": "preserve",
     "paths": {
-      "@/*": ["./src/*"],
-      "@my-app/shared": ["../../packages/shared/src/index.ts"]
+      "@/*": ["./src/*"]
     },
     "types": ["node"],
     "noEmit": true
