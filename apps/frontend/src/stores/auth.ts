@@ -149,7 +149,9 @@ export const useAuthStore = defineStore(
   },
   {
     persist: {
-      paths: ['token'], // 只持久化 token
+      key: 'auth',
+      storage: localStorage,
+      paths: ['token', 'user'], // 持久化 token 和 user
     },
   },
 )

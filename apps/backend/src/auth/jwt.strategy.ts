@@ -7,6 +7,7 @@ import { AuthService } from './auth.service'
 interface JwtPayload {
   sub: number
   email: string
+  type: 'access' | 'refresh'
 }
 
 /**
@@ -35,6 +36,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
    * 验证 JWT payload
    */
   async validate(payload: JwtPayload) {
+    // 验证是否为访问令牌
+    if (payload.type !== 'access') {
+      throw new UnauthorizedException('无效的令牌类型')
+    }
+
     const user = await this.authService.getUserById(payload.sub)
 
     if (!user) {

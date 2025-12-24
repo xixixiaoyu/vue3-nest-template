@@ -20,11 +20,28 @@ function getCookie(name: string): string | null {
   return match ? decodeURIComponent(match[2]) : null
 }
 
+/**
+ * 从 localStorage 获取 token（兼容 pinia 持久化）
+ */
+function getToken(): string | null {
+  // 尝试从 localStorage 获取（pinia-plugin-persistedstate 默认存储位置）
+  const authData = localStorage.getItem('auth')
+  if (authData) {
+    try {
+      const parsed = JSON.parse(authData)
+      return parsed.token || null
+    } catch {
+      return null
+    }
+  }
+  return null
+}
+
 // 请求拦截器
 httpClient.interceptors.request.use(
   (config) => {
     // 如果存在 token，添加到请求头
-    const token = localStorage.getItem('token')
+    const token = getToken()
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -49,7 +66,7 @@ httpClient.interceptors.response.use(
     // 处理通用错误
     if (error.response?.status === 401) {
       // 未授权，清除 token
-      localStorage.removeItem('token')
+      localStorage.removeItem('auth')
     }
     return Promise.reject(error)
   },

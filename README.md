@@ -437,7 +437,23 @@ interface PaginatedResponse<T> {
 
 ## 📦 部署
 
-### 环境变量
+### 环境变量管理
+
+项目采用**单一环境变量源**策略，所有配置统一在根目录的 `.env` 文件中管理：
+
+| 文件 | 用途 | 说明 |
+|------|------|------|
+| `.env` | 开发环境配置 | 从 `.env.example` 复制，包含所有服务配置 |
+| `.env.example` | 配置模板 | 提交到 Git，供开发者参考 |
+| `.env.docker` | Docker 环境配置 | 用于 Docker Compose 部署 |
+| `apps/frontend/.env.production` | 前端生产配置 | Vite 构建时使用（`VITE_` 前缀） |
+
+**重要**：
+- 后端通过 `ConfigModule` 从根目录 `.env` 读取配置
+- 前端通过 Vite 代理访问后端，无需额外配置
+- 不要在 `apps/backend/` 或 `apps/frontend/` 创建 `.env` 文件
+
+### 环境变量配置
 
 开发前须复制 `.env.example` 为 `.env` 并配置：
 
@@ -518,6 +534,13 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 - **重要**：前端 `zod` 依赖必须在 `apps/frontend/package.json` 中显式声明，否则 Docker 构建会失败（pnpm 隔离 node_modules 策略）
 - Zod Schema 在共享包中定义，前后端通过 workspace 引用
 - 使用 `workspace:*` 引用 monorepo 内部包
+
+### 环境变量管理
+
+- **单一来源**：所有环境变量统一在根目录 `.env` 文件中管理
+- 后端通过 `ConfigModule.forRoot({ envFilePath: ['.env', '../../.env'] })` 读取配置
+- 前端通过 Vite 代理访问后端，无需额外配置
+- 不要在子目录创建 `.env` 文件，避免配置不一致
 
 ### 服务依赖
 

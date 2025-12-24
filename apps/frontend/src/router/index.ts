@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 /**
  * 应用路由配置
@@ -8,7 +9,7 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/login',
+      redirect: '/users',
     },
     {
       path: '/login',
@@ -49,10 +50,25 @@ const router = createRouter({
   ],
 })
 
-// 路由守卫：更新页面标题
+// 路由守卫：更新页面标题 + 认证检查
 router.beforeEach((to) => {
   const title = to.meta.title as string
   document.title = title ? `${title} - My App` : 'My App'
+
+  const authStore = useAuthStore()
+
+  // 需要认证的页面
+  const requiresAuth = ['users'].includes(to.name as string)
+
+  // 已登录用户访问登录/注册页，跳转到用户列表
+  if (authStore.isAuthenticated && ['login', 'register'].includes(to.name as string)) {
+    return '/users'
+  }
+
+  // 未登录用户访问需要认证的页面，跳转到登录页
+  if (!authStore.isAuthenticated && requiresAuth) {
+    return '/login'
+  }
 })
 
 export default router

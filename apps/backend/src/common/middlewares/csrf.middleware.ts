@@ -22,7 +22,10 @@ export class CsrfMiddleware implements NestMiddleware {
     '/api/health',
     '/api/docs',
     '/api/auth/login', // 登录接口通过速率限制保护
+    '/api/auth/register', // 注册接口通过速率限制保护
     '/api/auth/refresh',
+    '/api/auth/forgot-password', // 忘记密码接口
+    '/api/auth/reset-password', // 重置密码接口
   ]
 
   // 安全方法（不需要 CSRF 验证）

@@ -26,7 +26,10 @@ pnpm-debug.log*
 .env.docker
 .env.local
 .env.*.local
+apps/backend/.env
+apps/frontend/.env
 !.env.example
+!.env.production
 
 # Turbo
 .turbo
