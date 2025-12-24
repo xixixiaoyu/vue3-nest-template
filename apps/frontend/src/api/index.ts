@@ -1,5 +1,6 @@
 import axios from 'axios'
 import type { User, ApiResponse, AuthResponse, RegisterInput, LoginInput } from '@my-app/shared'
+import { useAuthStore } from '../stores/auth'
 
 /**
  * HTTP 客户端实例
@@ -59,15 +60,67 @@ httpClient.interceptors.request.use(
   (error) => Promise.reject(error),
 )
 
+// 防止并发刷新请求
+let isRefreshing = false
+let refreshSubscribers: Array<(token: string) => void> = []
+
+/**
+ * 订阅刷新令牌完成事件
+ */
+function subscribeTokenRefresh(callback: (token: string) => void) {
+  refreshSubscribers.push(callback)
+}
+
+/**
+ * 刷新令牌完成后通知所有订阅者
+ */
+function onRefreshed(token: string) {
+  refreshSubscribers.forEach((callback) => callback(token))
+  refreshSubscribers = []
+}
+
 // 响应拦截器
 httpClient.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // 处理通用错误
-    if (error.response?.status === 401) {
-      // 未授权，清除 token
-      localStorage.removeItem('auth')
+  async (error) => {
+    const originalRequest = error.config
+
+    // 处理 401 错误
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      // 如果正在刷新，将请求加入队列
+      if (isRefreshing) {
+        return new Promise((resolve) => {
+          subscribeTokenRefresh((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`
+            resolve(httpClient(originalRequest))
+          })
+        }).catch(() => {
+          return Promise.reject(error)
+        })
+      }
+
+      originalRequest._retry = true
+      isRefreshing = true
+
+      try {
+        const authStore = useAuthStore()
+        const success = await authStore.refreshAccessToken()
+
+        if (success && authStore.token) {
+          const newToken = authStore.token
+          onRefreshed(newToken)
+          originalRequest.headers.Authorization = `Bearer ${newToken}`
+          return httpClient(originalRequest)
+        }
+      } catch {
+        // 刷新失败，清除认证状态
+        localStorage.removeItem('auth')
+        window.location.href = '/login'
+      } finally {
+        isRefreshing = false
+      }
     }
+
     return Promise.reject(error)
   },
 )
@@ -144,6 +197,16 @@ export const api = {
         password,
       },
     )
+    return data
+  },
+
+  /**
+   * 刷新访问令牌
+   */
+  async refreshToken(refreshToken: string): Promise<ApiResponse<AuthResponse>> {
+    const { data } = await httpClient.post<ApiResponse<AuthResponse>>('/auth/refresh', {
+      refreshToken,
+    })
     return data
   },
 }

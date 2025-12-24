@@ -12,6 +12,7 @@ export const useAuthStore = defineStore(
   () => {
     // 状态
     const token = ref<string | null>(null)
+    const refreshToken = ref<string | null>(null)
     const user = ref<User | null>(null)
     const loading = ref(false)
     const error = ref<string | null>(null)
@@ -29,6 +30,7 @@ export const useAuthStore = defineStore(
       try {
         const response = await api.login(credentials)
         token.value = response.data.accessToken
+        refreshToken.value = response.data.refreshToken || null
         user.value = response.data.user
         return true
       } catch (e: unknown) {
@@ -50,6 +52,7 @@ export const useAuthStore = defineStore(
       try {
         const response = await api.register(userData)
         token.value = response.data.accessToken
+        refreshToken.value = response.data.refreshToken || null
         user.value = response.data.user
         return true
       } catch (e: unknown) {
@@ -114,10 +117,30 @@ export const useAuthStore = defineStore(
     }
 
     /**
+     * 刷新访问令牌
+     */
+    async function refreshAccessToken(): Promise<boolean> {
+      if (!refreshToken.value) {
+        return false
+      }
+
+      try {
+        const response = await api.refreshToken(refreshToken.value)
+        token.value = response.data.accessToken
+        user.value = response.data.user
+        return true
+      } catch {
+        logout()
+        return false
+      }
+    }
+
+    /**
      * 登出
      */
     function logout(): void {
       token.value = null
+      refreshToken.value = null
       user.value = null
       error.value = null
     }
@@ -132,6 +155,7 @@ export const useAuthStore = defineStore(
     return {
       // 状态
       token,
+      refreshToken,
       user,
       loading,
       error,
@@ -144,6 +168,7 @@ export const useAuthStore = defineStore(
       resetPassword,
       logout,
       fetchCurrentUser,
+      refreshAccessToken,
       clearError,
     }
   },
@@ -151,7 +176,7 @@ export const useAuthStore = defineStore(
     persist: {
       key: 'auth',
       storage: localStorage,
-      paths: ['token', 'user'], // 持久化 token 和 user
+      paths: ['token', 'refreshToken', 'user'],
     },
   },
 )
