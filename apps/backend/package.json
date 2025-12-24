@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "nest build",
-    "dev": "nest start --watch",
+    "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
     "start": "node dist/main",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
@@ -77,6 +77,7 @@
     "@types/passport-jwt": "^4.0.1",
     "@types/sanitize-html": "^2.16.0",
     "eslint": "^9.17.0",
+    "ts-loader": "^9.5.4",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.1"
