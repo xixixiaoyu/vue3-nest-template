@@ -2,3 +2,10 @@ dist
 node_modules
 pnpm-lock.yaml
 *.md
+coverage
+*.log
+.turbo
+pnpm-workspace.yaml
+android/
+ios/
+electron/
