@@ -6,7 +6,7 @@ import helmet from 'helmet'
 import cookieParser from 'cookie-parser'
 import compression from 'compression'
 import { AppModule } from './app.module'
-import { AllExceptionsFilter, SanitizeInterceptor } from './common'
+import { AllExceptionsFilter, SanitizeInterceptor, TransformInterceptor } from './common'
 
 /**
  * 应用程序启动入口
@@ -67,6 +67,9 @@ async function bootstrap() {
 
   // 全局异常过滤器
   app.useGlobalFilters(new AllExceptionsFilter())
+
+  // 全局响应转换拦截器（统一 API 响应格式）
+  app.useGlobalInterceptors(new TransformInterceptor())
 
   // 全局 XSS 清理拦截器（输入数据清理）
   app.useGlobalInterceptors(new SanitizeInterceptor())
