@@ -7,6 +7,10 @@ export default {
     language: '语言',
     logout: '退出登录',
     welcome: '欢迎',
+    user: '用户',
+  },
+  home: {
+    welcomeMessage: '欢迎使用 My App',
   },
   login: {
     title: '登录账户',

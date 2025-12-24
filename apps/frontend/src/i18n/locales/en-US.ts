@@ -7,6 +7,10 @@ export default {
     language: 'Language',
     logout: 'Logout',
     welcome: 'Welcome',
+    user: 'User',
+  },
+  home: {
+    welcomeMessage: 'Welcome to My App',
   },
   login: {
     title: 'Sign in to your account',

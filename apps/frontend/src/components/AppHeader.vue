@@ -15,7 +15,7 @@ function handleLogout() {
 <template>
   <header class="bg-warm-bg shadow-sm border-b border-gray-200">
     <nav class="container mx-auto px-4 h-16 flex items-center justify-between">
-      <RouterLink to="/login" class="text-xl font-bold text-primary-600"> My App </RouterLink>
+      <RouterLink to="/" class="text-xl font-bold text-primary-600"> My App </RouterLink>
       <div class="flex items-center space-x-6">
         <template v-if="authStore.isAuthenticated && authStore.user">
           <div class="flex items-center space-x-3">
@@ -40,14 +40,6 @@ function handleLogout() {
             {{ t('common.logout') }}
           </button>
         </template>
-        <template v-else>
-          <RouterLink to="/login" class="text-gray-600 hover:text-primary-600 transition-colors">
-            {{ t('login.title') }}
-          </RouterLink>
-        </template>
-        <RouterLink to="/users" class="text-gray-600 hover:text-primary-600 transition-colors">
-          {{ t('common.users') }}
-        </RouterLink>
         <LanguageSwitcher />
       </div>
     </nav>

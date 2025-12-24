@@ -9,7 +9,9 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/users',
+      name: 'home',
+      component: () => import('@/views/HomeView.vue'),
+      meta: { title: '首页' },
     },
     {
       path: '/login',
@@ -58,15 +60,32 @@ router.beforeEach((to) => {
   const authStore = useAuthStore()
 
   // 需要认证的页面
-  const requiresAuth = ['users'].includes(to.name as string)
+  const requiresAuth = ['home'].includes(to.name as string)
 
-  // 已登录用户访问登录/注册页，跳转到用户列表
-  if (authStore.isAuthenticated && ['login', 'register'].includes(to.name as string)) {
-    return '/users'
+  // 从 localStorage 检查 token（作为持久化数据恢复前的后备方案）
+  const hasTokenInStorage = () => {
+    const authData = localStorage.getItem('auth')
+    if (authData) {
+      try {
+        const parsed = JSON.parse(authData)
+        return !!parsed.token
+      } catch {
+        return false
+      }
+    }
+    return false
+  }
+
+  // 已登录用户访问登录/注册页，跳转到首页
+  if (
+    (authStore.isAuthenticated || hasTokenInStorage()) &&
+    ['login', 'register'].includes(to.name as string)
+  ) {
+    return '/'
   }
 
   // 未登录用户访问需要认证的页面，跳转到登录页
-  if (!authStore.isAuthenticated && requiresAuth) {
+  if (!authStore.isAuthenticated && !hasTokenInStorage() && requiresAuth) {
     return '/login'
   }
 })

@@ -35,8 +35,7 @@ const onSubmit = handleSubmit(async (values) => {
   const { email, name, password } = values
   const success = await authStore.register({ email, name, password })
   if (success) {
-    alert('注册成功！请登录')
-    router.push('/login')
+    router.push('/')
   }
 })
 </script>
