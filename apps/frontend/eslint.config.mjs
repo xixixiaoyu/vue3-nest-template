@@ -14,7 +14,46 @@ export default [
     languageOptions: {
       parserOptions: {
         parser: ts.parser,
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+        extraFileExtensions: ['.vue'],
       },
+    },
+  },
+  {
+    files: ['*.ts', '*.tsx', '*.mts', '*.cts'],
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+  {
+    files: ['*.mjs', '*.cjs', '*.js'],
+    languageOptions: {
+      parserOptions: {
+        projectService: false,
+      },
+    },
+  },
+  {
+    files: [
+      'capacitor.config.ts',
+      'electron/main.ts',
+      'electron/preload.ts',
+      'pwa-assets.config.ts',
+      'vitest.config.ts',
+      'vite.config.ts',
+    ],
+    languageOptions: {
+      parserOptions: {
+        projectService: false,
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'off',
+      '@typescript-eslint/no-misused-promises': 'off',
     },
   },
   {
