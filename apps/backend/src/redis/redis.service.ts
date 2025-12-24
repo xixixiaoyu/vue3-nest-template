@@ -58,7 +58,8 @@ export class RedisService implements OnModuleDestroy {
   async onModuleDestroy() {
     try {
       // cache-manager v7 使用 stores 数组
-      const stores = (this.cache as any).stores
+      const cacheWithStores = this.cache as { stores?: Array<{ disconnect?: () => Promise<void> }> }
+      const stores = cacheWithStores.stores
       if (stores && Array.isArray(stores)) {
         for (const store of stores) {
           if (store && typeof store.disconnect === 'function') {
