@@ -5,6 +5,8 @@ export default {
     refresh: 'Refresh',
     back: 'Back',
     language: 'Language',
+    logout: 'Logout',
+    welcome: 'Welcome',
   },
   login: {
     title: 'Sign in to your account',

@@ -5,6 +5,8 @@ export default {
     refresh: '刷新',
     back: '返回',
     language: '语言',
+    logout: '退出登录',
+    welcome: '欢迎',
   },
   login: {
     title: '登录账户',
