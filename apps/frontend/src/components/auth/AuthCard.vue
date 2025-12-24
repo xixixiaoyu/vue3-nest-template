@@ -6,7 +6,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-warm-bg px-4 py-12">
+  <div class="flex-1 flex items-center justify-center bg-warm-bg px-4 py-12">
     <div class="w-full max-w-[480px] bg-warm-card rounded-[20px] p-12 shadow-lg animate-fade-in-up">
       <div class="mb-8">
         <h2 class="text-3xl font-bold text-warm-text text-center">
