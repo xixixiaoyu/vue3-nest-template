@@ -125,7 +125,7 @@ services:
         corepack prepare pnpm@9.15.0 --activate &&
         pnpm install &&
         pnpm --filter @my-app/shared build &&
-        npx prisma generate &&
+        DATABASE_URL='postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-myapp}?schema=public' npx prisma generate --schema=prisma/schema.prisma &&
         pnpm dev
       "
 
