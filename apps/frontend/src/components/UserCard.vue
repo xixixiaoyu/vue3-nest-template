@@ -22,7 +22,7 @@ function formatDate(dateString: string): string {
 </script>
 
 <template>
-  <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+  <div class="bg-warm-card rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
     <div class="flex items-center space-x-4">
       <div class="flex-shrink-0">
         <img

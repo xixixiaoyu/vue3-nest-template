@@ -41,7 +41,7 @@ onMounted(() => {
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="users.length === 0" class="text-center py-12 bg-white rounded-lg shadow">
+    <div v-else-if="users.length === 0" class="text-center py-12 bg-warm-card rounded-lg shadow">
       <svg
         class="mx-auto h-12 w-12 text-gray-400"
         fill="none"

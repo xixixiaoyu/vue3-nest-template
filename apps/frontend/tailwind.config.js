@@ -55,7 +55,7 @@ export default {
           5: 'hsl(var(--chart-5))',
         },
         warm: {
-          bg: '#FAF8F3',
+          bg: '#faf8f4',
           card: '#FFFFFF',
           primary: '#D4A574',
           'primary-hover': '#C89454',
