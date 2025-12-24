@@ -14,6 +14,25 @@ const httpClient = axios.create({
 })
 
 /**
+ * 初始化 CSRF Token
+ * 在首次请求前发起一个 GET 请求获取 CSRF token cookie
+ */
+let csrfInitialized = false
+
+async function initCsrfToken(): Promise<void> {
+  if (csrfInitialized) return
+
+  try {
+    // 发起一个 GET 请求到健康检查端点，后端会设置 CSRF token cookie
+    await httpClient.get('/health', { timeout: 5000 })
+    csrfInitialized = true
+  } catch {
+    // 静默失败，不影响后续请求
+    csrfInitialized = true
+  }
+}
+
+/**
  * 从 cookie 中获取指定名称的值
  */
 function getCookie(name: string): string | null {
@@ -40,7 +59,12 @@ function getToken(): string | null {
 
 // 请求拦截器
 httpClient.interceptors.request.use(
-  (config) => {
+  async (config) => {
+    // 首次请求前初始化 CSRF token
+    if (!csrfInitialized) {
+      await initCsrfToken()
+    }
+
     // 如果存在 token，添加到请求头
     const token = getToken()
     if (token) {
@@ -219,4 +243,4 @@ export const api = {
   },
 }
 
-export { httpClient }
+export { httpClient, initCsrfToken }

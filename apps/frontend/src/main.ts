@@ -15,6 +15,7 @@ import VChart from 'vue-echarts'
 import App from './App.vue'
 import router from './router'
 import i18n from './i18n'
+import { initCsrfToken } from './api'
 import './styles/main.css'
 
 // 注册 ECharts 必要组件
@@ -52,5 +53,8 @@ app.use(VueQueryPlugin, { queryClient })
 
 // 全局注册 VChart 组件
 app.component('VChart', VChart)
+
+// 初始化 CSRF Token（静默失败，不影响应用启动）
+initCsrfToken().catch(() => {})
 
 app.mount('#app')
