@@ -20,6 +20,6 @@ export default [
     },
   },
   {
-    ignores: ['dist', 'node_modules', 'prisma', 'coverage', '*.log'],
+    ignores: ['dist', 'node_modules', 'prisma/generated', 'coverage', '*.log'],
   },
 ]
