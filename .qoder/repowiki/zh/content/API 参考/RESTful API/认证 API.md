@@ -16,6 +16,12 @@
 - [auth.module.ts](file://apps/backend/src/auth/auth.module.ts)
 </cite>
 
+## 更新摘要
+**已更新内容**
+- 在“JWT 令牌机制”部分新增了对访问令牌类型检查的详细说明
+- 在“认证守卫与受保护路由”部分更新了守卫工作流程以反映令牌类型验证逻辑
+- 在“常见问题”部分新增了关于无效令牌类型的解决方案
+
 ## 目录
 1. [简介](#简介)
 2. [认证端点](#认证端点)
@@ -87,6 +93,21 @@ I --> J[返回AuthResponse]
 | 访问令牌 (Access Token) | 默认 15 分钟 | 请求受保护资源 | `localStorage` |
 | 刷新令牌 (Refresh Token) | 默认 7 天 | 获取新的访问令牌 | 响应体中一次性返回 |
 
+### 令牌类型检查
+系统在 `JwtStrategy` 中实现了严格的令牌类型检查机制。当验证 JWT payload 时，会检查 `type` 字段的值：
+
+```typescript
+async validate(payload: JwtPayload) {
+  // 验证是否为访问令牌
+  if (payload.type !== 'access') {
+    throw new UnauthorizedException('无效的令牌类型')
+  }
+  // ...
+}
+```
+
+只有 `type` 字段值为 `'access'` 的令牌才会被接受。任何其他类型的令牌（包括 `refresh` 类型）都将导致 `UnauthorizedException` 异常被抛出，返回 401 未授权错误。
+
 ### 令牌生成流程
 ```mermaid
 sequenceDiagram
@@ -105,10 +126,12 @@ AuthService-->>Client : {accessToken, refreshToken, user}
 **Diagram sources**
 - [auth.service.ts](file://apps/backend/src/auth/auth.service.ts#L66-L75)
 - [jwt.strategy.ts](file://apps/backend/src/auth/jwt.strategy.ts#L27-L31)
+- [jwt.strategy.ts](file://apps/backend/src/auth/jwt.strategy.ts#L38-L41)
 
 **Section sources**
 - [auth.service.ts](file://apps/backend/src/auth/auth.service.ts#L22-L33)
 - [auth.service.ts](file://apps/backend/src/auth/auth.service.ts#L111-L126)
+- [jwt.strategy.ts](file://apps/backend/src/auth/jwt.strategy.ts#L38-L41)
 
 ## 认证守卫与受保护路由
 `JWTAuthGuard` 用于保护需要身份验证的路由。
@@ -123,10 +146,15 @@ participant Service as AuthService
 Client->>Guard : 请求 /auth/me
 Guard->>Strategy : 验证 Authorization Bearer Token
 Strategy->>Strategy : 提取 JWT payload
+Strategy->>Strategy : 验证令牌类型是否为 'access'
+alt 令牌类型不是 'access'
+Strategy-->>Guard : 抛出 UnauthorizedException
+else 令牌类型是 'access'
 Strategy->>Service : getUserById(payload.sub)
 Service->>Service : 查询数据库
 Service-->>Strategy : 返回用户信息
 Strategy-->>Guard : 返回用户
+end
 Guard-->>Client : 允许访问
 ```
 
@@ -230,7 +258,13 @@ D --> F
 - **原因**: 刷新令牌已过期（7天）或被撤销
 - **解决方案**: 用户需要重新登录
 
+### 无效的令牌类型
+- **现象**: 请求受保护路由返回 401 错误，消息为"无效的令牌类型"
+- **原因**: 使用了刷新令牌（refresh token）而非访问令牌（access token）进行认证
+- **解决方案**: 确保在 Authorization 头中使用登录或刷新接口返回的 `accessToken`，而不是 `refreshToken`
+
 **Section sources**
 - [auth.service.ts](file://apps/backend/src/auth/auth.service.ts#L62-L64)
 - [auth.service.ts](file://apps/backend/src/auth/auth.service.ts#L103-L105)
 - [auth.service.ts](file://apps/backend/src/auth/auth.service.ts#L91-L93)
+- [jwt.strategy.ts](file://apps/backend/src/auth/jwt.strategy.ts#L39-L41)

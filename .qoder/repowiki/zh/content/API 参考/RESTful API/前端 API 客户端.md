@@ -5,13 +5,9 @@
 - [index.ts](file://apps/frontend/src/api/index.ts)
 - [useRequest.ts](file://apps/frontend/src/composables/useRequest.ts)
 - [auth.ts](file://apps/frontend/src/stores/auth.ts)
-- [users.ts](file://apps/frontend/src/stores/users.ts)
 - [common.dto.ts](file://packages/shared/src/dto/common.dto.ts)
-- [auth.schema.ts](file://packages/shared/src/schemas/auth.schema.ts)
 - [UsersView.vue](file://apps/frontend/src/views/UsersView.vue)
 - [LoginForm.vue](file://apps/frontend/src/components/LoginForm.vue)
-- [users.controller.ts](file://apps/backend/src/users/users.controller.ts)
-- [auth.controller.ts](file://apps/backend/src/auth/auth.controller.ts)
 </cite>
 
 ## 目录
@@ -36,28 +32,42 @@ A["创建 Axios 实例"] --> B["设置 baseURL: /api"]
 B --> C["设置超时时间: 10000ms"]
 C --> D["设置默认 Content-Type"]
 D --> E["请求拦截器"]
-E --> F["添加 JWT Token"]
-E --> G["添加 CSRF Token (非 GET 请求)"]
-F --> H["发送请求"]
+E --> F["初始化 CSRF Token"]
+E --> G["添加 JWT Token"]
+E --> H["添加 CSRF Token (非 GET 请求)"]
+F --> H
 G --> H
-H --> I["响应拦截器"]
-I --> J{"状态码 401?"}
-J --> |是| K["清除本地 Token"]
-J --> |否| L["正常返回"]
+H --> I["发送请求"]
+I --> J["响应拦截器"]
+J --> K{"状态码 401?"}
+K --> |是| L["检查刷新状态"]
+K --> |否| M["正常返回"]
+L --> N{"正在刷新?"}
+N --> |是| O["将请求加入队列"]
+N --> |否| P["标记重试，开始刷新"]
+P --> Q["调用 refreshAccessToken"]
+Q --> R{"刷新成功?"}
+R --> |是| S["更新令牌，重放请求"]
+R --> |否| T["清除认证，跳转登录页"]
 ```
 
 **Diagram sources**  
-- [index.ts](file://apps/frontend/src/api/index.ts#L7-L56)
+- [index.ts](file://apps/frontend/src/api/index.ts#L7-L150)
 
 **Section sources**  
-- [index.ts](file://apps/frontend/src/api/index.ts#L1-L92)
+- [index.ts](file://apps/frontend/src/api/index.ts#L1-L247)
 
 ### 请求拦截器
-- 自动从 `localStorage` 读取 `token`，并在请求头中添加 `Authorization: Bearer <token>`。
-- 对于非 `GET`、`HEAD`、`OPTIONS` 请求，从 cookie 中提取 `XSRF-TOKEN` 并设置 `X-XSRF-TOKEN` 请求头，防止 CSRF 攻击。
+- **CSRF Token 初始化**：在首次请求前，自动调用 `initCsrfToken` 函数，通过向 `/health` 端点发起 GET 请求来获取并设置 CSRF token cookie，确保后续非 GET 请求的安全性。
+- **JWT Token 添加**：自动从 `localStorage` 读取 `token`，并在请求头中添加 `Authorization: Bearer <token>`。
+- **CSRF Token 添加**：对于非 `GET`、`HEAD`、`OPTIONS` 请求，从 cookie 中提取 `XSRF-TOKEN` 并设置 `X-XSRF-TOKEN` 请求头，防止 CSRF 攻击。
 
 ### 响应拦截器
-- 统一处理 401 未授权错误：清除本地 `token`，实现自动登出。
+更新了对 401 错误的处理机制，引入了令牌刷新和请求队列管理：
+- **401 错误处理**：当收到 401 未授权响应时，启动令牌刷新流程。
+- **令牌刷新队列**：使用 `isRefreshing` 标志防止并发刷新请求。当多个请求同时触发 401 时，后续请求会被加入队列，等待刷新完成。
+- **请求重放**：成功刷新令牌后，通知队列中的所有等待请求，使用新令牌重新发送。
+- **自动登出**：若刷新失败，则清除本地认证状态并重定向到登录页。
 
 ## 核心 API 方法
 
@@ -68,11 +78,13 @@ API 客户端通过 `api` 对象导出多个方法，均返回 `Promise<ApiRespo
 | `getUsers` | 无 | `Promise<ApiResponse<User[]>>` | 获取用户列表 |
 | `getUser` | `id: number` | `Promise<ApiResponse<User>>` | 根据 ID 获取单个用户 |
 | `createUser` | `userData: { email, name, password }` | `Promise<ApiResponse<User>>` | 创建新用户 |
+| `login` | `credentials: LoginInput` | `Promise<ApiResponse<AuthResponse>>` | 用户登录 |
+| `register` | `userData: RegisterInput` | `Promise<ApiResponse<AuthResponse>>` | 用户注册 |
+| `refreshToken` | `refreshToken: string` | `Promise<ApiResponse<AuthResponse>>` | 刷新访问令牌 |
 
 **Section sources**  
-- [index.ts](file://apps/frontend/src/api/index.ts#L61-L89)
-- [common.dto.ts](file://packages/shared/src/dto/common.dto.ts#L4-L13)
-- [auth.schema.ts](file://packages/shared/src/schemas/auth.schema.ts#L60-L67)
+- [index.ts](file://apps/frontend/src/api/index.ts#L154-L243)
+- [common.dto.ts](file://packages/shared/src/dto/common.dto.ts#L3-L12)
 
 ### 响应格式定义
 所有 API 响应遵循 `ApiResponse<T>` 接口：
@@ -143,7 +155,12 @@ UsersStore-->>UsersView : 更新 users, loading, error
 ## 错误处理与状态管理
 
 ### Token 过期处理
-当响应状态码为 401 时，响应拦截器自动清除 `localStorage` 中的 `token`，后续请求将被视为未登录状态。
+当响应状态码为 401 时，响应拦截器会启动复杂的处理流程：
+1. 检查是否已有刷新操作在进行。
+2. 如果没有，则调用 `authStore.refreshAccessToken()` 方法尝试刷新令牌。
+3. 如果有其他请求正在刷新，则将当前请求加入等待队列。
+4. 刷新成功后，使用新令牌重放所有排队的请求。
+5. 刷新失败则清除 `localStorage` 中的 `auth` 数据，并重定向到 `/login` 页面。
 
 ### 登录流程中的错误处理
 在 `LoginForm.vue` 中，`authStore.login` 方法捕获登录失败错误，并将错误信息暴露给组件显示。
@@ -159,11 +176,11 @@ E --> F["在表单中显示错误"]
 
 **Diagram sources**  
 - [LoginForm.vue](file://apps/frontend/src/components/LoginForm.vue#L1-L99)
-- [auth.ts](file://apps/frontend/src/stores/auth.ts#L1-L97)
+- [auth.ts](file://apps/frontend/src/stores/auth.ts#L1-L183)
 
 **Section sources**  
 - [LoginForm.vue](file://apps/frontend/src/components/LoginForm.vue#L1-L99)
-- [auth.ts](file://apps/frontend/src/stores/auth.ts#L1-L97)
+- [auth.ts](file://apps/frontend/src/stores/auth.ts#L1-L183)
 
 ## 与后端 RESTful API 的契约一致性
 
@@ -181,9 +198,10 @@ E --> F["在表单中显示错误"]
 |--------|----------|----------|------|
 | `httpClient.post('/auth/login')` | `POST /auth/login` | POST | 用户登录 |
 | `httpClient.get('/auth/me')` | `GET /auth/me` | GET | 获取当前用户 |
+| `httpClient.post('/auth/refresh')` | `POST /auth/refresh` | POST | 刷新访问令牌 |
 
 **Section sources**  
 - [users.controller.ts](file://apps/backend/src/users/users.controller.ts#L1-L43)
 - [auth.controller.ts](file://apps/backend/src/auth/auth.controller.ts#L1-L51)
-- [index.ts](file://apps/frontend/src/api/index.ts#L61-L89)
-- [auth.ts](file://apps/frontend/src/stores/auth.ts#L1-L97)
+- [index.ts](file://apps/frontend/src/api/index.ts#L154-L243)
+- [auth.ts](file://apps/frontend/src/stores/auth.ts#L1-L183)
