@@ -100,11 +100,12 @@ export class AuthService {
         throw new UnauthorizedException('用户不存在')
       }
 
-      // 只返回新的访问令牌，不更新刷新令牌
       const newAccessToken = this.generateAccessToken(user.id, user.email)
+      const newRefreshToken = this.generateRefreshToken(user.id, user.email)
 
       return {
         accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
         expiresIn: this.accessTokenExpiresIn,
         user,
       }
