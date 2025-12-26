@@ -109,8 +109,8 @@ export const useAuthStore = defineStore(
       if (!token.value) return
 
       try {
-        const { data } = await api.getMe()
-        user.value = data
+        const response = await api.getMe()
+        user.value = response.data
       } catch {
         logout()
       }
