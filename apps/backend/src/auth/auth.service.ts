@@ -29,7 +29,7 @@ interface JwtPayload {
 @Injectable()
 export class AuthService {
   private readonly accessTokenExpiresIn: number // 访问令牌过期时间（秒）
-  private readonly refreshTokenExpiresIn: string // 刷新令牌过期时间
+  private readonly refreshTokenExpiresIn: number // 刷新令牌过期时间（秒）
 
   constructor(
     private readonly prisma: PrismaService,
@@ -41,7 +41,7 @@ export class AuthService {
     // 访问令牌默认 15 分钟
     this.accessTokenExpiresIn = this.configService.get<number>('JWT_ACCESS_EXPIRES_IN', 900)
     // 刷新令牌默认 7 天
-    this.refreshTokenExpiresIn = this.configService.get<string>('JWT_REFRESH_EXPIRES_IN', '7d')
+    this.refreshTokenExpiresIn = this.configService.get<number>('JWT_REFRESH_EXPIRES_IN', 604800)
   }
 
   /**
