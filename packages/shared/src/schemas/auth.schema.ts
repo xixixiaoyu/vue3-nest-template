@@ -72,7 +72,7 @@ export const UserSchema = z.object({
  */
 export const AuthResponseSchema = z.object({
   accessToken: z.string(),
-  refreshToken: z.string().optional(), // 刷新令牌（可选，仅登录时返回）
+  refreshToken: z.string(),
   expiresIn: z.number().optional(), // 访问令牌过期时间（秒）
   user: UserSchema,
 })

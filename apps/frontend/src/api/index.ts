@@ -139,7 +139,8 @@ httpClient.interceptors.response.use(
       } catch {
         // 刷新失败，清除认证状态
         localStorage.removeItem('auth')
-        window.location.href = '/login'
+        // 触发登出事件，让组件决定是否跳转
+        window.dispatchEvent(new CustomEvent('auth:logout'))
       } finally {
         isRefreshing = false
       }

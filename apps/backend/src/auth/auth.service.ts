@@ -204,7 +204,8 @@ export class AuthService {
     }
 
     const { token, hashedToken } = this.generateResetToken()
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 小时后过期
+    const resetPasswordExpiresIn = this.configService.get<number>('RESET_PASSWORD_EXPIRES_IN', 3600)
+    const expiresAt = new Date(Date.now() + resetPasswordExpiresIn * 1000)
 
     await this.prisma.user.update({
       where: { id: user.id },

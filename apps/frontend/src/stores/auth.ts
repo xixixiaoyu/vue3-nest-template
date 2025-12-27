@@ -127,6 +127,7 @@ export const useAuthStore = defineStore(
       try {
         const response = await api.refreshToken(refreshToken.value)
         token.value = response.data.accessToken
+        refreshToken.value = response.data.refreshToken
         user.value = response.data.user
         return true
       } catch {
