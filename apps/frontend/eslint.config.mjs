@@ -1,6 +1,7 @@
 import baseConfig from '../../eslint.config.mjs'
 import vue from 'eslint-plugin-vue'
 import ts from 'typescript-eslint'
+import globals from 'globals'
 
 /**
  * Frontend ESLint 配置
@@ -9,6 +10,14 @@ import ts from 'typescript-eslint'
 export default [
   ...baseConfig,
   ...vue.configs['flat/recommended'],
+  {
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
+    },
+  },
   {
     files: ['**/*.vue'],
     languageOptions: {
@@ -54,6 +63,7 @@ export default [
     rules: {
       '@typescript-eslint/no-floating-promises': 'off',
       '@typescript-eslint/no-misused-promises': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
   {

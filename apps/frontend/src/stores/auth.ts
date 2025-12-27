@@ -112,7 +112,7 @@ export const useAuthStore = defineStore(
         const response = await api.getMe()
         user.value = response.data
       } catch {
-        logout()
+        void logout()
       }
     }
 
@@ -131,7 +131,7 @@ export const useAuthStore = defineStore(
         user.value = response.data.user
         return true
       } catch {
-        logout()
+        void logout()
         return false
       }
     }
