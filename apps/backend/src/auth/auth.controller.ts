@@ -10,6 +10,7 @@ import {
   RefreshTokenDto,
   ForgotPasswordDto,
   ResetPasswordDto,
+  LogoutDto,
 } from './auth.dto'
 import type { User, AuthResponse } from '@my-app/shared'
 
@@ -87,5 +88,20 @@ export class AuthController {
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto): Promise<{ message: string }> {
     await this.authService.resetPassword(resetPasswordDto.token, resetPasswordDto.password)
     return { message: '密码重置成功，请使用新密码登录' }
+  }
+
+  /**
+   * 用户登出
+   */
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '用户登出' })
+  async logout(
+    @CurrentUser() user: User,
+    @Body() logoutDto: LogoutDto,
+  ): Promise<{ message: string }> {
+    await this.authService.logout(user.id, logoutDto.refreshToken)
+    return { message: '登出成功' }
   }
 }

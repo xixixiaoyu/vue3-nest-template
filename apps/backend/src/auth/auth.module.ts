@@ -7,6 +7,7 @@ import { AuthController } from './auth.controller'
 import { JwtStrategy } from './jwt.strategy'
 import { PrismaModule } from '../prisma/prisma.module'
 import { MailModule } from '../mail/mail.module'
+import { RedisModule } from '../redis/redis.module'
 
 /**
  * 认证模块
@@ -15,6 +16,7 @@ import { MailModule } from '../mail/mail.module'
   imports: [
     PrismaModule,
     MailModule,
+    RedisModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       inject: [ConfigService],

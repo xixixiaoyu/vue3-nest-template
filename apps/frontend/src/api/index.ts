@@ -242,6 +242,16 @@ export const api = {
     })
     return data
   },
+
+  /**
+   * 用户登出
+   */
+  async logout(refreshToken: string): Promise<ApiResponse<{ message: string }>> {
+    const { data } = await httpClient.post<ApiResponse<{ message: string }>>('/auth/logout', {
+      refreshToken,
+    })
+    return data
+  },
 }
 
 export { httpClient, initCsrfToken }

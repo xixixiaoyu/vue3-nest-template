@@ -8,6 +8,7 @@ import { JwtService } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
 import { PrismaService } from '../prisma/prisma.service'
 import { MailService } from '../mail/mail.service'
+import { RedisService, CachePrefix } from '../redis/redis.service'
 import * as bcrypt from 'bcryptjs'
 import * as crypto from 'crypto'
 import type { LoginInput, RegisterInput, User, AuthResponse } from '@my-app/shared'
@@ -17,6 +18,7 @@ interface JwtPayload {
   sub: number
   email: string
   type: 'access' | 'refresh'
+  exp?: number
 }
 
 /**
@@ -34,6 +36,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly mailService: MailService,
+    private readonly redisService: RedisService,
   ) {
     // 访问令牌默认 15 分钟
     this.accessTokenExpiresIn = this.configService.get<number>('JWT_ACCESS_EXPIRES_IN', 900)
@@ -88,6 +91,14 @@ export class AuthService {
    */
   async refreshToken(refreshToken: string): Promise<AuthResponse> {
     try {
+      // 检查是否在黑名单中
+      const isBlacklisted = await this.redisService.has(`blacklist:${refreshToken}`, {
+        prefix: CachePrefix.AUTH,
+      })
+      if (isBlacklisted) {
+        throw new UnauthorizedException('刷新令牌已失效')
+      }
+
       const payload = this.jwtService.verify<JwtPayload>(refreshToken)
 
       // 验证是否为刷新令牌
@@ -259,5 +270,30 @@ export class AuthService {
     const token = crypto.randomBytes(32).toString('hex')
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex')
     return { token, hashedToken }
+  }
+
+  /**
+   * 用户登出
+   * 将刷新令牌加入黑名单
+   */
+  async logout(userId: number, refreshToken: string): Promise<void> {
+    try {
+      const payload = this.jwtService.verify<JwtPayload>(refreshToken)
+
+      // 计算令牌剩余有效时间（秒）
+      if (payload.exp) {
+        const ttl = Math.floor((payload.exp * 1000 - Date.now()) / 1000)
+
+        if (ttl > 0) {
+          // 将刷新令牌加入黑名单，过期时间与令牌剩余时间一致
+          await this.redisService.set(`blacklist:${refreshToken}`, '1', {
+            prefix: CachePrefix.AUTH,
+            ttl,
+          })
+        }
+      }
+    } catch {
+      // 令牌无效或已过期，无需处理
+    }
   }
 }

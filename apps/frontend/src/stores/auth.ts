@@ -139,7 +139,14 @@ export const useAuthStore = defineStore(
     /**
      * 登出
      */
-    function logout(): void {
+    async function logout(): Promise<void> {
+      if (refreshToken.value) {
+        try {
+          await api.logout(refreshToken.value)
+        } catch {
+          // 静默失败
+        }
+      }
       token.value = null
       refreshToken.value = null
       user.value = null
