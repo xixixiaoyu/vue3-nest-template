@@ -18,10 +18,10 @@
 
 ## 更新摘要
 **已更新内容**
-- 在“认证端点”部分更新了“刷新令牌”端点的响应说明，明确指出现在会返回新的刷新令牌
-- 在“JWT 令牌机制”部分更新了令牌生成流程的序列图和说明，反映刷新操作中生成新刷新令牌的行为
-- 在“前端调用流程”部分更新了登录和刷新流程的序列图，确保与后端行为一致
-- 在“常见问题”部分更新了关于刷新令牌失效的解决方案，以反映新的刷新机制
+- 在“认证端点”部分新增了“登出”端点（POST /auth/logout）的详细说明，包括其受 Bearer 令牌保护和接收刷新令牌的请求体
+- 在“JWT 令牌机制”部分更新了访问令牌和刷新令牌的过期时间说明，反映从配置文件中读取的 `JWT_ACCESS_EXPIRES_IN` 和 `JWT_REFRESH_EXPIRES_IN` 配置
+- 在“前端调用流程”部分更新了登出流程的序列图和说明，确保与后端行为一致
+- 在“常见问题”部分新增了关于登出后刷新令牌失效的说明
 
 ## 目录
 1. [简介](#简介)
@@ -34,7 +34,7 @@
 8. [常见问题](#常见问题)
 
 ## 简介
-本 API 文档详细说明了基于 NestJS 的认证系统，涵盖登录、注册和令牌刷新功能。所有端点均使用 `@ApiTags('认证')` 进行分组，并通过 Zod Schema 实现请求验证，响应统一遵循 `AuthResponseSchema` 格式。系统采用 JWT Bearer Token 进行身份验证，支持访问令牌与刷新令牌双机制，确保安全性与用户体验的平衡。
+本 API 文档详细说明了基于 NestJS 的认证系统，涵盖登录、注册、令牌刷新和登出功能。所有端点均使用 `@ApiTags('认证')` 进行分组，并通过 Zod Schema 实现请求验证，响应统一遵循 `AuthResponseSchema` 格式。系统采用 JWT Bearer Token 进行身份验证，支持访问令牌与刷新令牌双机制，确保安全性与用户体验的平衡。
 
 **Section sources**
 - [auth.controller.ts](file://apps/backend/src/auth/auth.controller.ts#L1-L51)
@@ -61,38 +61,53 @@
 - **响应**: `AuthResponseSchema`（包含新的访问令牌和刷新令牌）
 - **速率限制**: 每分钟最多 10 次尝试
 
+### 登出 (POST /auth/logout)
+使当前用户的刷新令牌失效，实现安全登出。
+
+- **认证**: 需要 Bearer 访问令牌（通过 `JWTAuthGuard` 保护）
+- **请求体**: `LogoutDto`（包含需失效的刷新令牌）
+- **响应**: 成功消息
+- **实现**: 服务端将提供的刷新令牌加入 Redis 黑名单，使其在剩余有效期内无法使用
+
 ```mermaid
 flowchart TD
 A[客户端] --> B{选择操作}
 B --> C[POST /auth/login]
 B --> D[POST /auth/register]
 B --> E[POST /auth/refresh]
-C --> F[验证凭据]
-D --> G[创建用户]
-E --> H[验证刷新令牌]
-F --> I[生成JWT令牌]
-G --> I
-H --> I
-I --> J[返回AuthResponse]
+B --> F[POST /auth/logout]
+C --> G[验证凭据]
+D --> H[创建用户]
+E --> I[验证刷新令牌]
+F --> J[验证访问令牌]
+G --> K[生成JWT令牌]
+H --> K
+I --> K
+J --> L[将刷新令牌加入黑名单]
+K --> M[返回AuthResponse]
+L --> N[返回登出成功]
 ```
 
 **Diagram sources**
 - [auth.controller.ts](file://apps/backend/src/auth/auth.controller.ts#L18-L37)
 - [auth.dto.ts](file://apps/backend/src/auth/auth.dto.ts#L8-L18)
 - [auth.schema.ts](file://packages/shared/src/schemas/auth.schema.ts#L24-L85)
+- [auth.controller.ts](file://apps/backend/src/auth/auth.controller.ts#L96-L105)
 
 **Section sources**
 - [auth.controller.ts](file://apps/backend/src/auth/auth.controller.ts#L18-L37)
 - [auth.dto.ts](file://apps/backend/src/auth/auth.dto.ts#L8-L18)
 - [auth.schema.ts](file://packages/shared/src/schemas/auth.schema.ts#L24-L85)
+- [auth.controller.ts](file://apps/backend/src/auth/auth.controller.ts#L96-L105)
+- [auth.service.ts](file://apps/backend/src/auth/auth.service.ts#L275-L297)
 
 ## JWT 令牌机制
 系统采用双令牌机制以增强安全性：
 
 | 令牌类型 | 过期时间 | 用途 | 存储位置 |
 |--------|--------|------|--------|
-| 访问令牌 (Access Token) | 默认 15 分钟 | 请求受保护资源 | `localStorage` |
-| 刷新令牌 (Refresh Token) | 默认 7 天 | 获取新的访问令牌 | 响应体中一次性返回 |
+| 访问令牌 (Access Token) | 由 `JWT_ACCESS_EXPIRES_IN` 配置，默认 900 秒（15 分钟） | 请求受保护资源 | `localStorage` |
+| 刷新令牌 (Refresh Token) | 由 `JWT_REFRESH_EXPIRES_IN` 配置，默认 '7d'（7 天） | 获取新的访问令牌 | 响应体中一次性返回 |
 
 ### 令牌类型检查
 系统在 `JwtStrategy` 中实现了严格的令牌类型检查机制。当验证 JWT payload 时，会检查 `type` 字段的值：
@@ -133,6 +148,8 @@ AuthService-->>Client : {accessToken, refreshToken, user}
 - [auth.service.ts](file://apps/backend/src/auth/auth.service.ts#L22-L33)
 - [auth.service.ts](file://apps/backend/src/auth/auth.service.ts#L111-L126)
 - [jwt.strategy.ts](file://apps/backend/src/auth/jwt.strategy.ts#L38-L41)
+- [.env.example](file://.env.example#L24-L25)
+- [.env.docker.example](file://.env.docker.example#L35-L36)
 
 ## 认证守卫与受保护路由
 `JWTAuthGuard` 用于保护需要身份验证的路由。
@@ -187,6 +204,22 @@ Store->>Store : 设置用户信息
 Store-->>UI : 返回成功状态
 ```
 
+### 登出调用流程
+```mermaid
+sequenceDiagram
+participant UI as 用户界面
+participant Store as useAuthStore
+participant API as httpClient
+participant Backend as 后端API
+UI->>Store : logout()
+Store->>API : POST /auth/logout
+API->>Backend : 发送请求含Bearer Token和refreshToken
+Backend-->>API : 返回登出成功
+API-->>Store : 解析响应
+Store->>Store : 清除本地存储的token和用户信息
+Store-->>UI : 返回成功状态
+```
+
 ### 请求拦截器
 前端通过请求拦截器自动添加认证头：
 
@@ -204,6 +237,8 @@ D --> F
 - [auth.ts](file://apps/frontend/src/stores/auth.ts#L25-L38)
 - [index.ts](file://apps/frontend/src/api/index.ts#L24-L30)
 - [auth.schema.ts](file://packages/shared/src/schemas/auth.schema.ts#L73-L78)
+- [auth.ts](file://apps/frontend/src/stores/auth.ts#L142-L154)
+- [index.ts](file://apps/frontend/src/api/index.ts#L249-L254)
 
 ## 错误响应
 所有错误响应遵循统一格式：
@@ -234,7 +269,7 @@ D --> F
 1. 启动应用后访问 `http://localhost:3000/api/docs`
 2. 在 "认证" 分组下找到相应端点
 3. 点击 "Try it out" 按钮
-4. 输入请求参数（登录：邮箱和密码；刷新：刷新令牌）
+4. 输入请求参数（登录：邮箱和密码；刷新：刷新令牌；登出：刷新令牌）
 5. 点击 "Execute" 执行请求
 6. 查看响应结果和 HTTP 状态码
 7. 对于受保护的端点（如 `/auth/me`），先执行登录获取令牌，然后在页面顶部的 "Authorize" 按钮中输入 `Bearer <accessToken>` 进行认证
@@ -264,8 +299,14 @@ D --> F
 - **原因**: 使用了刷新令牌（refresh token）而非访问令牌（access token）进行认证
 - **解决方案**: 确保在 Authorization 头中使用登录或刷新接口返回的 `accessToken`，而不是 `refreshToken`
 
+### 登出后刷新令牌仍有效
+- **现象**: 登出后，使用旧的刷新令牌仍能成功刷新访问令牌
+- **原因**: 登出操作会将刷新令牌加入 Redis 黑名单，但该机制依赖于 Redis 的 TTL 与令牌剩余有效期同步。如果在令牌过期前尝试刷新，系统会先检查黑名单。
+- **解决方案**: 确保后端 Redis 服务正常运行，登出操作会立即使刷新令牌失效。如果问题持续存在，请检查 Redis 连接配置和黑名单逻辑。
+
 **Section sources**
 - [auth.service.ts](file://apps/backend/src/auth/auth.service.ts#L62-L64)
 - [auth.service.ts](file://apps/backend/src/auth/auth.service.ts#L103-L105)
 - [auth.service.ts](file://apps/backend/src/auth/auth.service.ts#L91-L93)
 - [jwt.strategy.ts](file://apps/backend/src/auth/jwt.strategy.ts#L39-L41)
+- [auth.service.ts](file://apps/backend/src/auth/auth.service.ts#L275-L297)
