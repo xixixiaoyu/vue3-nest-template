@@ -24,7 +24,7 @@ nest-vue-template/
 
 | 类别 | 技术 |
 |------|------|
-| 运行时 | Node.js 18+ |
+| 运行时 | Node.js 20+ |
 | 数据库 | PostgreSQL 16 + Prisma 6 ORM |
 | 缓存/队列 | Redis 7 + BullMQ 5 + cache-manager |
 | 认证 | JWT + Passport（accessToken + refreshToken 双令牌） |
@@ -77,7 +77,7 @@ nest-vue-template/
 
 ### 环境要求
 
-- Node.js >= 18
+- Node.js >= 20
 - pnpm >= 9
 - PostgreSQL >= 16
 - Redis >= 7
