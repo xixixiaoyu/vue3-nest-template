@@ -5,7 +5,6 @@ FROM node:20-alpine AS base
 
 # npm 镜像源配置 (淘宝镜像)
 ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
-ENV PRISMA_ENGINES_MIRROR=https://registry.npmmirror.com/-/binary/prisma
 
 # 启用 corepack 并安装 pnpm
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
@@ -46,7 +45,6 @@ FROM node:20-alpine AS production
 
 # npm 镜像源配置 (淘宝镜像)
 ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
-ENV PRISMA_ENGINES_MIRROR=https://registry.npmmirror.com/-/binary/prisma
 
 # 启用 pnpm
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate

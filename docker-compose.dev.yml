@@ -115,8 +115,6 @@ services:
       # 文件上传
       UPLOAD_MAX_SIZE: ${UPLOAD_MAX_SIZE:-10485760}
       UPLOAD_MAX_FILES: ${UPLOAD_MAX_FILES:-10}
-      # Prisma 引擎镜像源
-      PRISMA_ENGINES_MIRROR: https://registry.npmmirror.com/-/binary/prisma
     volumes:
       # 挂载项目目录（代码热更新）
       - .:/app
