@@ -45,6 +45,8 @@ prisma/*.db-journal
 *.tmp
 *.temp
 .cache
+*.tsbuildinfo
+v8-compile-cache-0/
 
 # Capacitor
 apps/frontend/ios/App/App/public
