@@ -15,6 +15,7 @@ import { EventsModule } from './events'
 import { UploadModule } from './upload'
 import { ScheduledTasksModule } from './scheduled-tasks'
 import { CsrfMiddleware } from './common'
+import { validateEnv } from './config/env.validation'
 
 /**
  * 应用程序根模块
@@ -25,6 +26,7 @@ import { CsrfMiddleware } from './common'
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env', '../../.env'],
+      validate: validateEnv,
     }),
     // Pino 日志模块
     LoggerModule.forRootAsync({

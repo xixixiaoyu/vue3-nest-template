@@ -5,6 +5,7 @@ import { VueQueryPlugin, QueryClient } from '@tanstack/vue-query'
 import App from './App.vue'
 import router from './router'
 import i18n from './i18n'
+import { useAuthStore } from './stores/auth'
 import './styles/main.css'
 
 const app = createApp(App)
@@ -24,6 +25,8 @@ const queryClient = new QueryClient({
 })
 
 app.use(pinia)
+const authStore = useAuthStore(pinia)
+void authStore.fetchCurrentUser()
 app.use(router)
 app.use(i18n)
 app.use(VueQueryPlugin, { queryClient })
