@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common'
 import { HealthIndicator, HealthIndicatorResult, HealthCheckError } from '@nestjs/terminus'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import type { Cache } from 'cache-manager'
+import { randomUUID } from 'crypto'
 
 /**
  * Redis 健康检查指示器
@@ -18,7 +19,7 @@ export class RedisHealthIndicator extends HealthIndicator {
    * 通过执行一个简单的 set/get 操作来验证
    */
   async isHealthy(key: string = 'redis'): Promise<HealthIndicatorResult> {
-    const testKey = '__health_check__'
+    const testKey = `__health_check__:${randomUUID()}`
     const testValue = Date.now().toString()
 
     try {
@@ -37,6 +38,12 @@ export class RedisHealthIndicator extends HealthIndicator {
         'Redis health check failed',
         this.getStatus(key, false, { message: errorMessage }),
       )
+    } finally {
+      try {
+        await this.cache.del(testKey)
+      } catch {
+        // 健康检查清理失败不应影响主流程
+      }
     }
   }
 }

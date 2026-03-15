@@ -9,6 +9,20 @@ import compression from 'compression'
 import { AppModule } from './app.module'
 import { AllExceptionsFilter, SanitizeInterceptor, TransformInterceptor } from './common'
 
+function parseCorsOrigins(): string[] {
+  const rawOrigins = process.env.CORS_ORIGIN
+  if (!rawOrigins) {
+    return ['http://localhost:5173']
+  }
+
+  const origins = rawOrigins
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+
+  return origins.length > 0 ? origins : ['http://localhost:5173']
+}
+
 /**
  * 应用程序启动入口
  */
@@ -57,7 +71,7 @@ async function bootstrap() {
 
   // 启用 CORS（通过代理访问）
   app.enableCors({
-    origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173'],
+    origin: parseCorsOrigins(),
     credentials: true, // 允许携带凭证
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-XSRF-TOKEN', 'X-Requested-With'],

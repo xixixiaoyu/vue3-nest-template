@@ -126,6 +126,32 @@ export default defineConfig(async () => {
         '@': resolve(__dirname, 'src'),
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id: string) {
+            if (!id.includes('node_modules')) {
+              return
+            }
+
+            if (
+              id.includes('/vue/') ||
+              id.includes('/pinia/') ||
+              id.includes('/vue-router/') ||
+              id.includes('/vue-i18n/')
+            ) {
+              return 'framework-vendor'
+            }
+
+            if (id.includes('/@tanstack/')) {
+              return 'query-vendor'
+            }
+
+            return 'vendor'
+          },
+        },
+      },
+    },
     server: {
       port: 5173,
       host: '0.0.0.0',

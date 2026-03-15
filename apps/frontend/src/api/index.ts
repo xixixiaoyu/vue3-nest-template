@@ -178,6 +178,7 @@ httpClient.interceptors.response.use(
           return httpClient(originalRequest)
         }
 
+        authStore.clearAuthState()
         onRefreshFailed(error)
       } catch (refreshError) {
         onRefreshFailed(refreshError)

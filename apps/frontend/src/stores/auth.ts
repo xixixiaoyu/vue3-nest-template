@@ -29,8 +29,15 @@ export const useAuthStore = defineStore(
     }
 
     function extractErrorMessage(err: unknown, fallback: string): string {
-      const axiosError = err as AxiosError<{ message?: string }>
-      return axiosError.response?.data?.message || fallback
+      const axiosError = err as AxiosError<{ message?: string | string[] }>
+      const message = axiosError.response?.data?.message
+      if (Array.isArray(message)) {
+        return message.join(', ')
+      }
+      if (typeof message === 'string') {
+        return message
+      }
+      return fallback
     }
 
     /**
@@ -130,6 +137,7 @@ export const useAuthStore = defineStore(
      */
     async function refreshAccessToken(): Promise<boolean> {
       if (!refreshToken.value) {
+        clearAuthState()
         return false
       }
 
