@@ -6,46 +6,52 @@ import { resolve } from 'path'
 const isElectron = process.env.ELECTRON === 'true'
 
 // 动态导入 electron 插件，避免在非 electron 环境下加载
-const getElectronPlugins = async () => {
+const getElectronPlugins = async (): Promise<any[]> => {
   if (!isElectron) return []
   const electron = (await import('vite-plugin-electron')).default
   const renderer = (await import('vite-plugin-electron-renderer')).default
-  return [
-    electron([
-      {
-        entry: 'electron/main.ts',
-        vite: {
-          build: {
-            outDir: 'dist-electron',
-            minify: false,
-            rollupOptions: {
-              external: ['electron'],
-              output: {
-                format: 'es',
-                entryFileNames: '[name].mjs',
-              },
+  const electronPlugin = electron([
+    {
+      entry: 'electron/main.ts',
+      vite: {
+        build: {
+          outDir: 'dist-electron',
+          minify: false,
+          rollupOptions: {
+            external: ['electron'],
+            output: {
+              format: 'es',
+              entryFileNames: '[name].mjs',
             },
           },
         },
       },
-      {
-        entry: 'electron/preload.ts',
-        onstart(args) {
-          args.reload()
-        },
-        vite: {
-          build: {
-            outDir: 'dist-electron',
-            minify: false,
-            rollupOptions: {
-              external: ['electron'],
-            },
+    },
+    {
+      entry: 'electron/preload.ts',
+      onstart(args) {
+        args.reload()
+      },
+      vite: {
+        build: {
+          outDir: 'dist-electron',
+          minify: false,
+          rollupOptions: {
+            external: ['electron'],
           },
         },
       },
-    ]),
-    renderer(),
-  ]
+    },
+  ])
+
+  const plugins: any[] = []
+  if (Array.isArray(electronPlugin)) {
+    plugins.push(...electronPlugin)
+  } else {
+    plugins.push(electronPlugin)
+  }
+  plugins.push(renderer())
+  return plugins
 }
 
 // 根据环境和构建目标设置 base 路径

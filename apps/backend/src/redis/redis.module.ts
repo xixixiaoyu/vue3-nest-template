@@ -1,7 +1,7 @@
 import { Module, Global, Logger } from '@nestjs/common'
 import { CacheModule } from '@nestjs/cache-manager'
 import { ConfigModule, ConfigService } from '@nestjs/config'
-import { redisStore } from 'cache-manager-ioredis-yet'
+import { createKeyv } from '@keyv/redis'
 import { RedisService } from './redis.service'
 
 /**
@@ -12,8 +12,14 @@ interface RedisModuleConfig {
   port: number
   password?: string
   db?: number
-  keyPrefix?: string
+  namespace?: string
   ttl?: number
+}
+
+function buildRedisUrl(config: RedisModuleConfig): string {
+  const auth = config.password ? `:${encodeURIComponent(config.password)}@` : ''
+  const db = config.db ?? 0
+  return `redis://${auth}${config.host}:${config.port}/${db}`
 }
 
 /**
@@ -36,38 +42,27 @@ interface RedisModuleConfig {
           port: config.get('REDIS_PORT', 6379),
           password: config.get('REDIS_PASSWORD') || undefined,
           db: config.get('REDIS_DB', 0),
-          keyPrefix: config.get('REDIS_KEY_PREFIX', 'app:'),
+          namespace: (config.get('REDIS_KEY_PREFIX', 'app') || 'app').replace(/:$/, ''),
           ttl: config.get('REDIS_DEFAULT_TTL', 300) * 1000, // 转换为毫秒
         }
 
         logger.log(`Connecting to Redis at ${redisConfig.host}:${redisConfig.port}`)
 
         try {
-          const store = await redisStore({
-            host: redisConfig.host,
-            port: redisConfig.port,
-            password: redisConfig.password,
-            db: redisConfig.db,
-            keyPrefix: redisConfig.keyPrefix,
-            // 连接配置
-            lazyConnect: false,
-            enableReadyCheck: true,
-            maxRetriesPerRequest: 3,
-            retryStrategy: (times: number) => {
-              if (times > 10) {
-                logger.error('Redis connection failed after 10 retries')
-                return null // 停止重试
-              }
-              const delay = Math.min(times * 100, 3000)
-              logger.warn(`Redis connection retry #${times}, waiting ${delay}ms`)
-              return delay
-            },
+          const keyv = createKeyv(buildRedisUrl(redisConfig), {
+            namespace: redisConfig.namespace,
+            throwOnConnectError: true,
+            throwOnErrors: true,
           })
+          keyv.on('error', (error) => logger.error('Redis runtime error', error))
 
-          logger.log('Redis connected successfully')
+          // 预热连接，确保启动阶段即可发现配置错误
+          await keyv.set('__redis_init__', '1', 1000)
+          await keyv.delete('__redis_init__')
+          logger.log('Redis connected successfully (Keyv)')
 
           return {
-            store,
+            stores: [keyv],
             ttl: redisConfig.ttl,
           }
         } catch (error) {
