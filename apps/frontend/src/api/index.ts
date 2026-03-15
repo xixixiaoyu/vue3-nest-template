@@ -19,18 +19,28 @@ const httpClient = axios.create({
  * 在首次请求前发起一个 GET 请求获取 CSRF token cookie
  */
 let csrfInitialized = false
+let csrfInitPromise: Promise<void> | null = null
 
 async function initCsrfToken(): Promise<void> {
   if (csrfInitialized) return
-
-  try {
-    // 发起一个 GET 请求到健康检查端点，后端会设置 CSRF token cookie
-    await httpClient.get('/health', { timeout: 5000 })
-    csrfInitialized = true
-  } catch {
-    // 静默失败，不影响后续请求
-    csrfInitialized = true
+  if (csrfInitPromise) {
+    await csrfInitPromise
+    return
   }
+
+  csrfInitPromise = (async () => {
+    try {
+      // 发起一个 GET 请求到健康检查端点，后端会设置 CSRF token cookie
+      await httpClient.get('/health', { timeout: 5000 })
+    } catch {
+      // 静默失败，不影响后续请求
+    } finally {
+      csrfInitialized = true
+      csrfInitPromise = null
+    }
+  })()
+
+  await csrfInitPromise
 }
 
 /**
@@ -130,8 +140,8 @@ httpClient.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       // 刷新令牌接口本身失败时，不再递归重试
       if (originalRequest.url?.includes('/auth/refresh')) {
-        localStorage.removeItem('auth')
-        window.dispatchEvent(new CustomEvent('auth:logout'))
+        const authStore = useAuthStore()
+        authStore.clearAuthState()
         return Promise.reject(error)
       }
 
@@ -171,10 +181,8 @@ httpClient.interceptors.response.use(
         onRefreshFailed(error)
       } catch (refreshError) {
         onRefreshFailed(refreshError)
-        // 刷新失败，清除认证状态
-        localStorage.removeItem('auth')
-        // 触发登出事件，让组件决定是否跳转
-        window.dispatchEvent(new CustomEvent('auth:logout'))
+        const authStore = useAuthStore()
+        authStore.clearAuthState()
       } finally {
         isRefreshing = false
       }

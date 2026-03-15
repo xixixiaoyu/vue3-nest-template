@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { api } from '../api'
+import type { AxiosError } from 'axios'
 import type { User, LoginInput, RegisterInput } from '@my-app/shared'
 
 /**
@@ -20,6 +21,18 @@ export const useAuthStore = defineStore(
     // 计算属性
     const isAuthenticated = computed(() => !!token.value)
 
+    function clearAuthState(): void {
+      token.value = null
+      refreshToken.value = null
+      user.value = null
+      error.value = null
+    }
+
+    function extractErrorMessage(err: unknown, fallback: string): string {
+      const axiosError = err as AxiosError<{ message?: string }>
+      return axiosError.response?.data?.message || fallback
+    }
+
     /**
      * 登录
      */
@@ -33,9 +46,8 @@ export const useAuthStore = defineStore(
         refreshToken.value = response.data.refreshToken || null
         user.value = response.data.user
         return true
-      } catch (e: unknown) {
-        const err = e as { response?: { data?: { message?: string } } }
-        error.value = err.response?.data?.message || '登录失败'
+      } catch (err: unknown) {
+        error.value = extractErrorMessage(err, '登录失败')
         return false
       } finally {
         loading.value = false
@@ -55,9 +67,8 @@ export const useAuthStore = defineStore(
         refreshToken.value = response.data.refreshToken || null
         user.value = response.data.user
         return true
-      } catch (e: unknown) {
-        const err = e as { response?: { data?: { message?: string } } }
-        error.value = err.response?.data?.message || '注册失败'
+      } catch (err: unknown) {
+        error.value = extractErrorMessage(err, '注册失败')
         return false
       } finally {
         loading.value = false
@@ -74,9 +85,8 @@ export const useAuthStore = defineStore(
       try {
         await api.forgotPassword(email)
         return true
-      } catch (e: unknown) {
-        const err = e as { response?: { data?: { message?: string } } }
-        error.value = err.response?.data?.message || '请求失败'
+      } catch (err: unknown) {
+        error.value = extractErrorMessage(err, '请求失败')
         return false
       } finally {
         loading.value = false
@@ -93,9 +103,8 @@ export const useAuthStore = defineStore(
       try {
         await api.resetPassword(token, password)
         return true
-      } catch (e: unknown) {
-        const err = e as { response?: { data?: { message?: string } } }
-        error.value = err.response?.data?.message || '重置密码失败'
+      } catch (err: unknown) {
+        error.value = extractErrorMessage(err, '重置密码失败')
         return false
       } finally {
         loading.value = false
@@ -112,7 +121,7 @@ export const useAuthStore = defineStore(
         const response = await api.getMe()
         user.value = response.data
       } catch {
-        void logout()
+        clearAuthState()
       }
     }
 
@@ -131,7 +140,7 @@ export const useAuthStore = defineStore(
         user.value = response.data.user
         return true
       } catch {
-        void logout()
+        clearAuthState()
         return false
       }
     }
@@ -147,10 +156,7 @@ export const useAuthStore = defineStore(
           // 静默失败
         }
       }
-      token.value = null
-      refreshToken.value = null
-      user.value = null
-      error.value = null
+      clearAuthState()
     }
 
     /**
@@ -177,6 +183,7 @@ export const useAuthStore = defineStore(
       logout,
       fetchCurrentUser,
       refreshAccessToken,
+      clearAuthState,
       clearError,
     }
   },

@@ -111,6 +111,9 @@ export class AuthService {
         throw new UnauthorizedException('用户不存在')
       }
 
+      // 轮换刷新令牌：旧令牌立即加入黑名单，防止重放
+      await this.blacklistRefreshToken(refreshToken, payload.exp)
+
       const newAccessToken = this.generateAccessToken(user.id, user.email)
       const newRefreshToken = this.generateRefreshToken(user.id, user.email)
 
@@ -279,21 +282,36 @@ export class AuthService {
   async logout(userId: number, refreshToken: string): Promise<void> {
     try {
       const payload = this.jwtService.verify<JwtPayload>(refreshToken)
-
-      // 计算令牌剩余有效时间（秒）
-      if (payload.exp) {
-        const ttl = Math.floor((payload.exp * 1000 - Date.now()) / 1000)
-
-        if (ttl > 0) {
-          // 将刷新令牌加入黑名单，过期时间与令牌剩余时间一致
-          await this.redisService.set(`blacklist:${refreshToken}`, '1', {
-            prefix: CachePrefix.AUTH,
-            ttl,
-          })
-        }
+      if (payload.type !== 'refresh') {
+        throw new UnauthorizedException('无效的刷新令牌')
       }
-    } catch {
+
+      if (payload.sub !== userId) {
+        throw new UnauthorizedException('令牌与当前用户不匹配')
+      }
+
+      await this.blacklistRefreshToken(refreshToken, payload.exp)
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error
+      }
       // 令牌无效或已过期，无需处理
     }
+  }
+
+  private async blacklistRefreshToken(token: string, exp?: number): Promise<void> {
+    if (!exp) {
+      return
+    }
+
+    const ttl = Math.floor((exp * 1000 - Date.now()) / 1000)
+    if (ttl <= 0) {
+      return
+    }
+
+    await this.redisService.set(`blacklist:${token}`, '1', {
+      prefix: CachePrefix.AUTH,
+      ttl,
+    })
   }
 }

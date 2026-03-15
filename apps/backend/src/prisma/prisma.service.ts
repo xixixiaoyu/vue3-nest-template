@@ -1,4 +1,5 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { Pool } from 'pg'
@@ -7,8 +8,13 @@ import { Pool } from 'pg'
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private pool: Pool
 
-  constructor() {
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+  constructor(private readonly configService: ConfigService) {
+    const connectionString = configService.get<string>(
+      'DATABASE_URL',
+      'postgresql://postgres:postgres@localhost:5432/myapp?schema=public',
+    )
+
+    const pool = new Pool({ connectionString })
     const adapter = new PrismaPg(pool)
 
     super({ adapter })
