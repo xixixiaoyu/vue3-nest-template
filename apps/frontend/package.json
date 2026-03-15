@@ -24,7 +24,8 @@
     "electron:build": "cross-env ELECTRON=true vite build && electron-builder",
     "electron:build:mac": "cross-env ELECTRON=true vite build && electron-builder --mac",
     "electron:build:win": "cross-env ELECTRON=true vite build && electron-builder --win",
-    "electron:build:linux": "cross-env ELECTRON=true vite build && electron-builder --linux"
+    "electron:build:linux": "cross-env ELECTRON=true vite build && electron-builder --linux",
+    "type-check": "vue-tsc -b --pretty false"
   },
   "dependencies": {
     "@capacitor/android": "8.0.0",
