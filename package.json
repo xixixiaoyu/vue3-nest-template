@@ -25,11 +25,11 @@
     "db:studio": "pnpm --filter @my-app/backend prisma:studio",
     "postinstall": "pnpm db:generate",
     "prepare": "husky",
-    "docker:build": "docker compose --env-file .env.docker build",
-    "docker:up": "docker compose --env-file .env.docker up -d",
-    "docker:down": "docker compose --env-file .env.docker down",
-    "docker:logs": "docker compose --env-file .env.docker logs -f",
-    "docker:clean": "docker compose --env-file .env.docker down -v --rmi local"
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "docker:clean": "docker compose down -v --rmi local"
   },
   "devDependencies": {
     "@eslint/js": "9.39.2",
