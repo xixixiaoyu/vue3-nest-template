@@ -9,10 +9,16 @@ export class AllExceptionsFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp()
     const response = ctx.getResponse<{
-      status: (code: number) => {
+      status?: (code: number) => {
         json?: (body: unknown) => unknown
         send?: (body: unknown) => unknown
       }
+      code?: (code: number) => {
+        json?: (body: unknown) => unknown
+        send?: (body: unknown) => unknown
+      }
+      json?: (body: unknown) => unknown
+      send?: (body: unknown) => unknown
     }>()
 
     // 获取 HTTP 状态码
@@ -31,7 +37,19 @@ export class AllExceptionsFilter implements ExceptionFilter {
       timestamp: new Date().toISOString(),
     }
 
-    const httpResponse = response.status(status)
+    const setStatus =
+      typeof response.status === 'function'
+        ? response.status.bind(response)
+        : typeof response.code === 'function'
+          ? response.code.bind(response)
+          : null
+
+    if (!setStatus) {
+      response.send?.(payload)
+      return
+    }
+
+    const httpResponse = setStatus(status)
     if (typeof httpResponse.send === 'function') {
       httpResponse.send(payload)
       return
