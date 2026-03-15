@@ -30,7 +30,7 @@ export default [
     },
   },
   {
-    files: ['*.ts', '*.tsx', '*.mts', '*.cts'],
+    files: ['**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts'],
     languageOptions: {
       parserOptions: {
         projectService: true,
@@ -48,12 +48,12 @@ export default [
   },
   {
     files: [
-      'capacitor.config.ts',
-      'electron/main.ts',
-      'electron/preload.ts',
-      'pwa-assets.config.ts',
-      'vitest.config.ts',
-      'vite.config.ts',
+      '**/capacitor.config.ts',
+      '**/electron/main.ts',
+      '**/electron/preload.ts',
+      '**/pwa-assets.config.ts',
+      '**/vitest.config.ts',
+      '**/vite.config.ts',
     ],
     languageOptions: {
       parserOptions: {

@@ -15,7 +15,7 @@ jobs:
   lint-and-test:
     name: Lint and Test
     runs-on: ubuntu-latest
-    if: github.event.pull_request.draft == false
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
 
     steps:
       - name: 检出代码
@@ -56,8 +56,8 @@ jobs:
       - name: Lint 检查
         run: pnpm lint
 
-      - name: 运行测试
-        run: pnpm test
+      - name: 覆盖率测试（含门禁）
+        run: pnpm test:coverage
 
   build:
     name: Build

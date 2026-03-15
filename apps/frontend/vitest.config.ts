@@ -18,6 +18,12 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       exclude: ['node_modules/', 'src/**/*.d.ts', 'src/main.ts', 'src/vite-env.d.ts'],
+      thresholds: {
+        lines: 35,
+        functions: 45,
+        statements: 35,
+        branches: 10,
+      },
     },
   },
 })

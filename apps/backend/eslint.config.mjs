@@ -7,6 +7,7 @@ import baseConfig from '../../eslint.config.mjs'
 export default [
   ...baseConfig,
   {
+    files: ['**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts'],
     languageOptions: {
       parserOptions: {
         projectService: true,
@@ -17,6 +18,17 @@ export default [
       '@typescript-eslint/interface-name-prefix': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
+    },
+  },
+  {
+    files: ['**/prisma.config.ts', '**/vitest.config.ts', '**/eslint.config.mjs'],
+    languageOptions: {
+      parserOptions: {
+        projectService: false,
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
   {
