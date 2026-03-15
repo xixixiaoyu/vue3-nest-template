@@ -40,7 +40,7 @@ async function bootstrap() {
   // 设置全局路由前缀
   app.setGlobalPrefix('api')
 
-  // Fastify Cookie 插件（CSRF 保护需要）
+  // Fastify Cookie 插件（认证/会话等场景需要）
   await app.register(fastifyCookie)
 
   // Fastify Helmet 安全头（防止 XSS、点击劫持等）
@@ -77,7 +77,7 @@ async function bootstrap() {
     origin: parseCorsOrigins(),
     credentials: true, // 允许携带凭证
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-XSRF-TOKEN', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   })
 
   // 全局 Zod 验证管道（替代 class-validator）

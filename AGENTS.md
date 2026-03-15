@@ -118,7 +118,6 @@ interface ApiErrorResponse {
 
 ## 9) 认证、安全与网关规则
 - 认证模型：`accessToken + refreshToken`
-- CSRF：非 `GET/HEAD/OPTIONS` 请求必须带 `X-XSRF-TOKEN` 请求头（从 `XSRF-TOKEN` Cookie 读取）
 - 全局限流默认三档：`1s/3`、`10s/20`、`60s/100`
 - 后端全局路由前缀：`/api`
 

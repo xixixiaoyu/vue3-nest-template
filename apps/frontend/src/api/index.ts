@@ -15,43 +15,6 @@ const httpClient = axios.create({
 })
 
 /**
- * 初始化 CSRF Token
- * 在首次请求前发起一个 GET 请求获取 CSRF token cookie
- */
-let csrfInitialized = false
-let csrfInitPromise: Promise<void> | null = null
-
-async function initCsrfToken(): Promise<void> {
-  if (csrfInitialized) return
-  if (csrfInitPromise) {
-    await csrfInitPromise
-    return
-  }
-
-  csrfInitPromise = (async () => {
-    try {
-      // 发起一个 GET 请求到健康检查端点，后端会设置 CSRF token cookie
-      await httpClient.get('/health', { timeout: 5000 })
-    } catch {
-      // 静默失败，不影响后续请求
-    } finally {
-      csrfInitialized = true
-      csrfInitPromise = null
-    }
-  })()
-
-  await csrfInitPromise
-}
-
-/**
- * 从 cookie 中获取指定名称的值
- */
-function getCookie(name: string): string | null {
-  const match = document.cookie.match(new RegExp(`(^| )${name}=([^;]+)`))
-  return match ? decodeURIComponent(match[2]) : null
-}
-
-/**
  * 从 localStorage 获取 token（兼容 pinia 持久化）
  */
 function getToken(): string | null {
@@ -71,23 +34,10 @@ function getToken(): string | null {
 // 请求拦截器
 httpClient.interceptors.request.use(
   async (config) => {
-    // 首次请求前初始化 CSRF token
-    if (!csrfInitialized) {
-      await initCsrfToken()
-    }
-
     // 如果存在 token，添加到请求头
     const token = getToken()
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
-    }
-
-    // 非 GET 请求添加 CSRF token
-    if (config.method && !['get', 'head', 'options'].includes(config.method.toLowerCase())) {
-      const csrfToken = getCookie('XSRF-TOKEN')
-      if (csrfToken) {
-        config.headers['X-XSRF-TOKEN'] = csrfToken
-      }
     }
 
     return config
