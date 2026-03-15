@@ -56,7 +56,7 @@
   },
   "pnpm": {
     "overrides": {
-      "@electron/rebuild": "4.0.2"
+      "@electron/rebuild": "3.7.0"
     }
   }
 }

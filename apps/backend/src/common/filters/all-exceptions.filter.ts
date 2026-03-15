@@ -1,5 +1,4 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common'
-import { Response } from 'express'
 
 /**
  * 全局异常过滤器
@@ -9,7 +8,12 @@ import { Response } from 'express'
 export class AllExceptionsFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp()
-    const response = ctx.getResponse<Response>()
+    const response = ctx.getResponse<{
+      status: (code: number) => {
+        json?: (body: unknown) => unknown
+        send?: (body: unknown) => unknown
+      }
+    }>()
 
     // 获取 HTTP 状态码
     const status =
@@ -19,13 +23,20 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const message = this.extractMessage(exception)
 
     // 返回标准化错误响应
-    response.status(status).json({
+    const payload = {
       success: false,
       data: null,
       message,
       statusCode: status,
       timestamp: new Date().toISOString(),
-    })
+    }
+
+    const httpResponse = response.status(status)
+    if (typeof httpResponse.send === 'function') {
+      httpResponse.send(payload)
+      return
+    }
+    httpResponse.json?.(payload)
   }
 
   private extractMessage(exception: unknown): string {

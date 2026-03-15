@@ -1,5 +1,5 @@
 import { Injectable, NestMiddleware, ForbiddenException } from '@nestjs/common'
-import { Request, Response, NextFunction } from 'express'
+import type { FastifyReply, FastifyRequest } from 'fastify'
 import * as crypto from 'crypto'
 
 /**
@@ -31,7 +31,9 @@ export class CsrfMiddleware implements NestMiddleware {
   // 安全方法（不需要 CSRF 验证）
   private readonly safeMethods = ['GET', 'HEAD', 'OPTIONS']
 
-  use(req: Request, res: Response, next: NextFunction) {
+  use(req: FastifyRequest, res: FastifyReply, next: () => void) {
+    const path = req.url.split('?')[0]
+
     // 确保每个响应都设置 CSRF token cookie
     this.ensureCsrfToken(req, res)
 
@@ -41,7 +43,7 @@ export class CsrfMiddleware implements NestMiddleware {
     }
 
     // 跳过特定路径
-    if (this.skipPaths.some((path) => req.path.startsWith(path))) {
+    if (this.skipPaths.some((skipPath) => path.startsWith(skipPath))) {
       return next()
     }
 
@@ -56,12 +58,18 @@ export class CsrfMiddleware implements NestMiddleware {
   /**
    * 确保响应中包含 CSRF token cookie
    */
-  private ensureCsrfToken(req: Request, res: Response): void {
-    const existingToken = req.cookies?.[this.cookieName]
+  private ensureCsrfToken(req: FastifyRequest, res: FastifyReply): void {
+    const requestWithCookies = req as FastifyRequest & {
+      cookies?: Record<string, string>
+    }
+    const responseWithCookie = res as FastifyReply & {
+      setCookie: (name: string, value: string, options: Record<string, unknown>) => FastifyReply
+    }
+    const existingToken = requestWithCookies.cookies?.[this.cookieName]
 
     if (!existingToken) {
       const token = this.generateToken()
-      res.cookie(this.cookieName, token, {
+      responseWithCookie.setCookie(this.cookieName, token, {
         httpOnly: false, // 允许 JavaScript 读取
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
@@ -74,9 +82,13 @@ export class CsrfMiddleware implements NestMiddleware {
   /**
    * 验证 CSRF token
    */
-  private validateCsrfToken(req: Request): boolean {
-    const cookieToken = req.cookies?.[this.cookieName]
-    const headerToken = req.headers[this.headerName.toLowerCase()] as string
+  private validateCsrfToken(req: FastifyRequest): boolean {
+    const requestWithCookies = req as FastifyRequest & {
+      cookies?: Record<string, string>
+    }
+    const cookieToken = requestWithCookies.cookies?.[this.cookieName]
+    const headerValue = req.headers[this.headerName.toLowerCase()]
+    const headerToken = Array.isArray(headerValue) ? headerValue[0] : headerValue
 
     if (!cookieToken || !headerToken) {
       return false

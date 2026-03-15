@@ -3,16 +3,21 @@ import {
   Post,
   Delete,
   Param,
-  UseInterceptors,
-  UploadedFile,
-  UploadedFiles,
   BadRequestException,
   UseGuards,
+  Req,
 } from '@nestjs/common'
-import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express'
+import type { MultipartFile } from '@fastify/multipart'
+import { ConfigService } from '@nestjs/config'
 import { ApiTags, ApiOperation, ApiConsumes, ApiBody, ApiBearerAuth } from '@nestjs/swagger'
+import type { FastifyRequest } from 'fastify'
 import { JwtAuthGuard } from '../auth'
-import { StorageService, UploadResult } from './storage.service'
+import { StorageService, UploadFile, UploadResult } from './storage.service'
+
+type MultipartRequest = FastifyRequest & {
+  file: () => Promise<MultipartFile | undefined>
+  files: () => AsyncIterableIterator<MultipartFile>
+}
 
 /**
  * 文件上传控制器
@@ -22,7 +27,22 @@ import { StorageService, UploadResult } from './storage.service'
 @UseGuards(JwtAuthGuard)
 @Controller('upload')
 export class UploadController {
-  constructor(private readonly storageService: StorageService) {}
+  private readonly allowedMimes = [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ] as const
+
+  constructor(
+    private readonly storageService: StorageService,
+    private readonly config: ConfigService,
+  ) {}
 
   /**
    * 上传单个文件
@@ -38,11 +58,15 @@ export class UploadController {
       },
     },
   })
-  @UseInterceptors(FileInterceptor('file'))
-  async uploadSingle(@UploadedFile() file: Express.Multer.File): Promise<UploadResult> {
-    if (!file) {
+  async uploadSingle(@Req() req: FastifyRequest): Promise<UploadResult> {
+    const part = await (req as MultipartRequest).file()
+    if (!part) {
       throw new BadRequestException('请选择要上传的文件')
     }
+    if (part.fieldname !== 'file') {
+      throw new BadRequestException('上传字段必须为 file')
+    }
+    const file = await this.normalizeUploadFile(part)
     return this.storageService.upload(file)
   }
 
@@ -63,11 +87,25 @@ export class UploadController {
       },
     },
   })
-  @UseInterceptors(FilesInterceptor('files', 10))
-  async uploadMultiple(@UploadedFiles() files: Express.Multer.File[]): Promise<UploadResult[]> {
-    if (!files || files.length === 0) {
+  async uploadMultiple(@Req() req: FastifyRequest): Promise<UploadResult[]> {
+    const maxFiles = this.getMaxFiles()
+    const files: UploadFile[] = []
+    const parts = (req as MultipartRequest).files()
+
+    for await (const part of parts) {
+      if (files.length >= maxFiles) {
+        throw new BadRequestException(`最多上传 ${maxFiles} 个文件`)
+      }
+      if (part.fieldname !== 'files') {
+        throw new BadRequestException('上传字段必须为 files')
+      }
+      files.push(await this.normalizeUploadFile(part))
+    }
+
+    if (files.length === 0) {
       throw new BadRequestException('请选择要上传的文件')
     }
+
     return this.storageService.uploadMany(files)
   }
 
@@ -79,5 +117,33 @@ export class UploadController {
   async delete(@Param('key') key: string): Promise<{ success: boolean }> {
     await this.storageService.delete(key)
     return { success: true }
+  }
+
+  private getMaxFiles(): number {
+    return this.config.get('UPLOAD_MAX_FILES', 10)
+  }
+
+  private getMaxFileSize(): number {
+    return this.config.get('UPLOAD_MAX_SIZE', 10 * 1024 * 1024)
+  }
+
+  private async normalizeUploadFile(part: MultipartFile): Promise<UploadFile> {
+    if (!this.allowedMimes.includes(part.mimetype as (typeof this.allowedMimes)[number])) {
+      throw new BadRequestException(`不支持的文件类型: ${part.mimetype}`)
+    }
+
+    const buffer = await part.toBuffer()
+    if (buffer.length > this.getMaxFileSize()) {
+      throw new BadRequestException(
+        `文件大小超出限制，最大允许 ${(this.getMaxFileSize() / 1024 / 1024).toFixed(0)}MB`,
+      )
+    }
+
+    return {
+      originalname: part.filename,
+      mimetype: part.mimetype,
+      size: buffer.length,
+      buffer,
+    }
   }
 }

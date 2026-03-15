@@ -18,6 +18,13 @@ export interface UploadResult {
   mimetype: string
 }
 
+export interface UploadFile {
+  originalname: string
+  mimetype: string
+  size: number
+  buffer: Buffer
+}
+
 /**
  * 云存储服务
  * 支持 AWS S3 和兼容 S3 协议的存储服务（如阿里云 OSS、MinIO）
@@ -53,7 +60,7 @@ export class StorageService implements OnModuleInit {
   /**
    * 上传文件到 S3
    */
-  async upload(file: Express.Multer.File, folder = 'uploads'): Promise<UploadResult> {
+  async upload(file: UploadFile, folder = 'uploads'): Promise<UploadResult> {
     const ext = extname(file.originalname)
     const key = `${folder}/${randomUUID()}${ext}`
 
@@ -80,7 +87,7 @@ export class StorageService implements OnModuleInit {
   /**
    * 批量上传文件
    */
-  async uploadMany(files: Express.Multer.File[], folder = 'uploads'): Promise<UploadResult[]> {
+  async uploadMany(files: UploadFile[], folder = 'uploads'): Promise<UploadResult[]> {
     return Promise.all(files.map((file) => this.upload(file, folder)))
   }
 
