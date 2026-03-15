@@ -247,4 +247,4 @@ export const api = {
   },
 }
 
-export { httpClient, initCsrfToken }
+export { httpClient }
