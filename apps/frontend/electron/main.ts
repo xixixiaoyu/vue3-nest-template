@@ -18,6 +18,22 @@ if (!app.requestSingleInstanceLock()) {
 let mainWindow: BrowserWindow | null = null
 
 const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
+const isDev = Boolean(VITE_DEV_SERVER_URL)
+
+function isHttpUrl(url: string) {
+  try {
+    const parsed = new URL(url)
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+function openExternalIfSafe(url: string) {
+  if (isHttpUrl(url)) {
+    void shell.openExternal(url)
+  }
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -30,6 +46,8 @@ function createWindow() {
       preload: join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
+      sandbox: true,
+      devTools: isDev,
     },
   })
 
@@ -40,27 +58,38 @@ function createWindow() {
 
   // 外部链接用默认浏览器打开
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('https:') || url.startsWith('http:')) {
-      shell.openExternal(url)
-    }
+    openExternalIfSafe(url)
     return { action: 'deny' }
+  })
+
+  // 阻止导航到外部站点，统一使用系统浏览器打开
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (url !== mainWindow?.webContents.getURL()) {
+      event.preventDefault()
+      openExternalIfSafe(url)
+    }
   })
 
   // 开发环境加载 dev server，生产环境加载打包文件
   if (VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(VITE_DEV_SERVER_URL)
-    mainWindow.webContents.openDevTools()
+    mainWindow.webContents.openDevTools({ mode: 'detach' })
   } else {
     mainWindow.loadFile(join(__dirname, '../dist/index.html'))
   }
 }
 
 app.whenReady().then(() => {
+  // 默认拒绝渲染进程权限请求，按需白名单放开
+  session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => {
+    callback(false)
+  })
+
   // 设置 Content Security Policy
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-    const csp = VITE_DEV_SERVER_URL
-      ? "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws://localhost:*; img-src 'self' data:"
-      : "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
+    const csp = isDev
+      ? "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss: http: https:; img-src 'self' data: blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+      : "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' http: https:; img-src 'self' data: blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
 
     callback({
       responseHeaders: {

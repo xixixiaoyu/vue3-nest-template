@@ -1,3 +1,7 @@
+type ElectronSendChannel = 'toMain'
+type ElectronReceiveChannel = 'fromMain'
+type ElectronInvokeChannel = 'dialog:openFile' | 'dialog:saveFile'
+
 export interface ElectronAPI {
   platform: NodeJS.Platform
   versions: {
@@ -5,9 +9,9 @@ export interface ElectronAPI {
     chrome: string
     electron: string
   }
-  send: (channel: string, ...args: unknown[]) => void
-  receive: (channel: string, callback: (...args: unknown[]) => void) => void
-  invoke: (channel: string, ...args: unknown[]) => Promise<unknown>
+  send: (channel: ElectronSendChannel, ...args: unknown[]) => void
+  receive: (channel: ElectronReceiveChannel, callback: (...args: unknown[]) => void) => () => void
+  invoke: (channel: ElectronInvokeChannel, ...args: unknown[]) => Promise<unknown>
 }
 
 declare global {
