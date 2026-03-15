@@ -52,6 +52,9 @@ jobs:
       - name: Lint 检查
         run: pnpm lint
 
+      - name: Type Check 检查
+        run: pnpm type-check
+
       - name: 校验 lint 无自动改动
         run: |
           if ! git diff --quiet; then
@@ -63,11 +66,61 @@ jobs:
       - name: 覆盖率测试（含门禁）
         run: pnpm test:coverage
 
+  shared-contract-gate:
+    name: Shared Contract Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: lint-and-test
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 检测 shared 变更
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            shared:
+              - 'packages/shared/**'
+
+      - name: 安装 pnpm
+        if: steps.changes.outputs.shared == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: 设置 Node.js
+        if: steps.changes.outputs.shared == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: 'pnpm-lock.yaml'
+
+      - name: 安装依赖
+        if: steps.changes.outputs.shared == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Shared 契约双端门禁
+        if: steps.changes.outputs.shared == 'true'
+        run: |
+          pnpm --filter @my-app/shared build
+          pnpm --filter @my-app/backend lint
+          pnpm --filter @my-app/backend test
+          pnpm --filter @my-app/frontend lint
+          pnpm --filter @my-app/frontend test
+
+      - name: Shared 未变更，跳过专门门禁
+        if: steps.changes.outputs.shared != 'true'
+        run: echo "packages/shared 未变更，已跳过 Shared Contract Gate。"
+
   build:
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    needs: lint-and-test
+    needs: [lint-and-test, shared-contract-gate]
 
     steps:
       - name: 检出代码
