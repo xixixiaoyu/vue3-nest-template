@@ -1,4 +1,5 @@
 import axios from 'axios'
+import type { InternalAxiosRequestConfig } from 'axios'
 import type { User, ApiResponse, AuthResponse, RegisterInput, LoginInput } from '@my-app/shared'
 import { useAuthStore } from '../stores/auth'
 
@@ -86,20 +87,31 @@ httpClient.interceptors.request.use(
 
 // 防止并发刷新请求
 let isRefreshing = false
-let refreshSubscribers: Array<(token: string) => void> = []
+let refreshSubscribers: Array<{
+  resolve: (token: string) => void
+  reject: (error: unknown) => void
+}> = []
 
 /**
  * 订阅刷新令牌完成事件
  */
-function subscribeTokenRefresh(callback: (token: string) => void) {
-  refreshSubscribers.push(callback)
+function subscribeTokenRefresh(resolve: (token: string) => void, reject: (error: unknown) => void) {
+  refreshSubscribers.push({ resolve, reject })
 }
 
 /**
  * 刷新令牌完成后通知所有订阅者
  */
 function onRefreshed(token: string) {
-  refreshSubscribers.forEach((callback) => callback(token))
+  refreshSubscribers.forEach((subscriber) => subscriber.resolve(token))
+  refreshSubscribers = []
+}
+
+/**
+ * 刷新令牌失败后通知所有订阅者
+ */
+function onRefreshFailed(error: unknown) {
+  refreshSubscribers.forEach((subscriber) => subscriber.reject(error))
   refreshSubscribers = []
 }
 
@@ -107,19 +119,37 @@ function onRefreshed(token: string) {
 httpClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config
+    const originalRequest = error.config as
+      | (InternalAxiosRequestConfig & { _retry?: boolean })
+      | null
+    if (!originalRequest) {
+      return Promise.reject(error)
+    }
 
     // 处理 401 错误
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // 刷新令牌接口本身失败时，不再递归重试
+      if (originalRequest.url?.includes('/auth/refresh')) {
+        localStorage.removeItem('auth')
+        window.dispatchEvent(new CustomEvent('auth:logout'))
+        return Promise.reject(error)
+      }
+
       // 如果正在刷新，将请求加入队列
       if (isRefreshing) {
-        return new Promise((resolve) => {
-          subscribeTokenRefresh((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`
-            resolve(httpClient(originalRequest))
-          })
-        }).catch(() => {
-          return Promise.reject(error)
+        return new Promise((resolve, reject) => {
+          subscribeTokenRefresh(
+            (token) => {
+              originalRequest.headers = originalRequest.headers || {}
+              originalRequest.headers.Authorization = `Bearer ${token}`
+              resolve(httpClient(originalRequest))
+            },
+            (refreshError) => {
+              reject(refreshError)
+            },
+          )
+        }).catch((refreshError) => {
+          return Promise.reject(refreshError)
         })
       }
 
@@ -133,10 +163,14 @@ httpClient.interceptors.response.use(
         if (success && authStore.token) {
           const newToken = authStore.token
           onRefreshed(newToken)
+          originalRequest.headers = originalRequest.headers || {}
           originalRequest.headers.Authorization = `Bearer ${newToken}`
           return httpClient(originalRequest)
         }
-      } catch {
+
+        onRefreshFailed(error)
+      } catch (refreshError) {
+        onRefreshFailed(refreshError)
         // 刷新失败，清除认证状态
         localStorage.removeItem('auth')
         // 触发登出事件，让组件决定是否跳转

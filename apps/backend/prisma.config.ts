@@ -1,12 +1,16 @@
 import { defineConfig } from 'prisma/config'
 import { config } from 'dotenv'
 import { resolve } from 'path'
+import { existsSync } from 'fs'
 
-// 加载根目录的 .env 文件
-const { error } = config({ path: resolve(__dirname, '../../.env') })
+// 加载根目录的 .env 文件（可选）
+const envPath = resolve(__dirname, '../../.env')
 
-if (error) {
-  console.warn('Warning: Failed to load .env file:', error.message)
+if (existsSync(envPath)) {
+  const { error } = config({ path: envPath })
+  if (error) {
+    console.warn('Warning: Failed to load .env file:', error.message)
+  }
 }
 
 export default defineConfig({

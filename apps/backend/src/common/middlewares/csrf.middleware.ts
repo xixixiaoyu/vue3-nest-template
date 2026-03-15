@@ -82,6 +82,11 @@ export class CsrfMiddleware implements NestMiddleware {
       return false
     }
 
+    // timingSafeEqual 要求长度一致，否则会抛出异常
+    if (cookieToken.length !== headerToken.length) {
+      return false
+    }
+
     // 使用时间安全的比较防止时序攻击
     return crypto.timingSafeEqual(Buffer.from(cookieToken), Buffer.from(headerToken))
   }

@@ -22,6 +22,7 @@
     "db:push": "pnpm --filter @my-app/backend prisma:push",
     "db:migrate": "pnpm --filter @my-app/backend prisma:migrate",
     "db:studio": "pnpm --filter @my-app/backend prisma:studio",
+    "postinstall": "pnpm db:generate",
     "prepare": "husky",
     "docker:build": "docker compose build",
     "docker:up": "docker compose up -d",
