@@ -58,6 +58,7 @@ export function validateEnv(env: EnvInput): EnvInput {
     ...env,
     NODE_ENV: nodeEnv,
     PORT: toNumber('PORT', env.PORT, 3000),
+    FRONTEND_URL: asOptionalString(env.FRONTEND_URL) || 'http://localhost:5173',
     JWT_SECRET: jwtSecret,
     JWT_ACCESS_EXPIRES_IN: toNumber('JWT_ACCESS_EXPIRES_IN', env.JWT_ACCESS_EXPIRES_IN, 900),
     JWT_REFRESH_EXPIRES_IN: toNumber('JWT_REFRESH_EXPIRES_IN', env.JWT_REFRESH_EXPIRES_IN, 604800),

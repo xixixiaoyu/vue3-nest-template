@@ -2,12 +2,17 @@
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
   "appId": "com.myapp.desktop",
   "productName": "My App",
+  "afterSign": "electron/notarize.cjs",
   "directories": {
     "output": "release",
     "buildResources": "build"
   },
   "files": ["dist/**/*", "dist-electron/**/*"],
   "mac": {
+    "hardenedRuntime": true,
+    "gatekeeperAssess": false,
+    "entitlements": "electron/entitlements.mac.plist",
+    "entitlementsInherit": "electron/entitlements.mac.plist",
     "target": [
       {
         "target": "dmg",

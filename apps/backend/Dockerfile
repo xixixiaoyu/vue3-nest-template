@@ -5,6 +5,7 @@ FROM node:20-alpine AS base
 
 # npm 镜像源配置 (淘宝镜像)
 ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
+ENV PRISMA_ENGINES_MIRROR=https://registry.npmmirror.com/-/binary/prisma
 
 # 启用 corepack 并安装 pnpm
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
@@ -16,8 +17,8 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json .npmrc ./
 COPY apps/backend/package.json ./apps/backend/
 COPY packages/shared/package.json ./packages/shared/
 
-# 安装依赖
-RUN pnpm install --frozen-lockfile
+# 安装依赖（跳过脚本，避免在依赖安装阶段触发 Prisma 引擎下载）
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # ============================================
 # Stage 2: Build application
@@ -36,7 +37,7 @@ RUN pnpm --filter @my-app/backend prisma:generate
 
 # 构建共享包和后端应用
 RUN pnpm --filter @my-app/shared build
-RUN pnpm --filter @my-app/backend build
+RUN pnpm --filter @my-app/backend exec nest build
 
 # ============================================
 # Stage 3: Production image
@@ -45,6 +46,7 @@ FROM node:20-alpine AS production
 
 # npm 镜像源配置 (淘宝镜像)
 ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
+ENV PRISMA_ENGINES_MIRROR=https://registry.npmmirror.com/-/binary/prisma
 
 # 启用 pnpm
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
@@ -63,8 +65,8 @@ COPY packages/shared/package.json ./packages/shared/
 # 复制 Prisma schema
 COPY apps/backend/prisma ./apps/backend/prisma
 
-# 安装生产依赖并生成 Prisma Client
-RUN pnpm install --frozen-lockfile --prod --ignore-scripts && \
+# Prisma 7 需要可用的 prisma CLI 才能正确生成客户端，使用完整安装后再生成
+RUN pnpm install --frozen-lockfile --ignore-scripts && \
     pnpm --filter @my-app/backend exec prisma generate && \
     rm -rf /root/.cache /tmp/*
 
@@ -91,4 +93,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
 # 启动应用
-CMD ["node", "dist/main"]
+CMD ["node", "dist/src/main"]

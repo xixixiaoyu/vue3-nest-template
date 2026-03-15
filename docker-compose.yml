@@ -87,6 +87,7 @@ services:
       # 日志 & CORS
       LOG_LEVEL: ${LOG_LEVEL:-info}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:80}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:80}
       # JWT
       JWT_SECRET: ${JWT_SECRET}
       JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-900}

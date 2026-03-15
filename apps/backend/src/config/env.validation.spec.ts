@@ -13,6 +13,7 @@ describe('validateEnv', () => {
     expect(env.PORT).toBe(3001)
     expect(env.MAIL_SECURE).toBe(true)
     expect(env.REDIS_PORT).toBe(6380)
+    expect(env.FRONTEND_URL).toBe('http://localhost:5173')
   })
 
   it('should throw when JWT_SECRET is missing', () => {

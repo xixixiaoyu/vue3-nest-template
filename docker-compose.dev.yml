@@ -89,6 +89,7 @@ services:
       # 日志 & CORS
       LOG_LEVEL: ${LOG_LEVEL:-debug}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
       # JWT
       JWT_SECRET: ${JWT_SECRET:-dev-secret-key-change-in-production}
       JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-900}

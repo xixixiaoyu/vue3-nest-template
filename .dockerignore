@@ -7,6 +7,12 @@ dist
 **/dist
 .turbo
 **/.turbo
+apps/frontend/release
+apps/frontend/android
+apps/frontend/ios
+apps/frontend/dist-electron
+apps/frontend/coverage
+apps/backend/coverage
 
 # Development files
 .git
@@ -52,6 +58,8 @@ tmp
 temp
 *.tmp
 *.temp
+.pnpm-store
+.qoder
 
 # Docker files (prevent recursive COPY)
 Dockerfile*
