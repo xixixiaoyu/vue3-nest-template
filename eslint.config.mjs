@@ -27,6 +27,19 @@ export default [
   },
   {
     files: [
+      'packages/shared/**/*.ts',
+      'packages/shared/**/*.tsx',
+      'packages/shared/**/*.mts',
+      'packages/shared/**/*.cts',
+    ],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-misused-promises': 'error',
+    },
+  },
+  {
+    files: [
       '**/vitest.config.ts',
       '**/vite.config.ts',
       '**/prisma.config.ts',

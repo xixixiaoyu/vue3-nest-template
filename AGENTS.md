@@ -123,10 +123,11 @@ interface ApiErrorResponse {
 - 后端全局路由前缀：`/api`
 
 ## 10) 改动后最低校验要求
-- 仅改前端：`pnpm --filter @my-app/frontend lint && pnpm --filter @my-app/frontend test`
-- 仅改后端：`pnpm --filter @my-app/backend lint && pnpm --filter @my-app/backend test`
-- 改 shared：先 `pnpm --filter @my-app/shared build`，再至少跑一侧消费者的 lint/test
+- 仅改前端：`pnpm --filter @my-app/frontend lint && pnpm --filter @my-app/frontend type-check && pnpm --filter @my-app/frontend test`
+- 仅改后端：`pnpm --filter @my-app/backend lint && pnpm --filter @my-app/backend type-check && pnpm --filter @my-app/backend test`
+- 改 shared：必须 `pnpm --filter @my-app/shared build`，并同时跑前后端两侧的 lint/test（不可只跑一侧）
 - 涉及接口契约（Schema/DTO/响应字段）变更：前后端都要联调验证
+- 覆盖率门禁：后端最低 `lines/statements 50%`、`functions 45%`、`branches 45%`；前端最低 `lines/statements 38%`、`functions 50%`、`branches 12%`
 
 ## 11) shadcn-vue 使用
 ```bash

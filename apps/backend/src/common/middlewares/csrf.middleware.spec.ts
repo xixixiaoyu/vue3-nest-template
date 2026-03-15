@@ -39,4 +39,35 @@ describe('CsrfMiddleware', () => {
     expect(() => middleware.use(req as never, res as never, next)).toThrow(ForbiddenException)
     expect(next).not.toHaveBeenCalled()
   })
+
+  it('should allow request when csrf cookie and header match', () => {
+    const token = 'a'.repeat(64)
+    const req = {
+      method: 'POST',
+      url: '/api/users',
+      cookies: { 'XSRF-TOKEN': token },
+      headers: { 'x-xsrf-token': token },
+    }
+    const res = createResponseMock()
+    const next = vi.fn()
+
+    middleware.use(req as never, res as never, next)
+
+    expect(next).toHaveBeenCalled()
+  })
+
+  it('should skip csrf validation for refresh endpoint', () => {
+    const req = {
+      method: 'POST',
+      url: '/api/auth/refresh',
+      cookies: {},
+      headers: {},
+    }
+    const res = createResponseMock()
+    const next = vi.fn()
+
+    middleware.use(req as never, res as never, next)
+
+    expect(next).toHaveBeenCalled()
+  })
 })
