@@ -26,8 +26,13 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup",
+    "lint": "eslint src --cache --cache-location ../../node_modules/.cache/eslint/shared.cache",
+    "lint:fix": "pnpm lint -- --fix",
     "clean": "rm -rf dist",
-    "type-check": "tsc --noEmit -p tsconfig.json"
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest --passWithNoTests",
+    "test:coverage": "vitest run --coverage --passWithNoTests",
+    "type-check": "tsc --noEmit --incremental --tsBuildInfoFile .turbo/typecheck.tsbuildinfo -p tsconfig.json"
   },
   "dependencies": {
     "zod": "3.25.76"

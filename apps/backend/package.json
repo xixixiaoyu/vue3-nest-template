@@ -10,7 +10,8 @@
     "start": "node dist/main",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "lint": "eslint src --fix",
+    "lint": "eslint src --cache --cache-location ../../node_modules/.cache/eslint/backend.cache",
+    "lint:fix": "pnpm lint -- --fix",
     "clean": "rm -rf dist",
     "pretest": "pnpm prisma:generate",
     "test": "vitest run",
@@ -20,7 +21,7 @@
     "prisma:push": "prisma db push",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "type-check": "tsc --noEmit -p tsconfig.json"
+    "type-check": "tsc --noEmit --incremental --tsBuildInfoFile .turbo/typecheck.tsbuildinfo -p tsconfig.json"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.958.0",

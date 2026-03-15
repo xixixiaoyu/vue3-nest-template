@@ -10,18 +10,43 @@
       "cache": false,
       "persistent": true
     },
-    "lint": {
-      "dependsOn": ["^build"]
+    "lint": {},
+    "lint:fix": {
+      "cache": false
     },
     "type-check": {
-      "dependsOn": ["^build"]
+      "outputs": [".turbo/*.tsbuildinfo", "tsconfig.tsbuildinfo"]
     },
-    "test": {
-      "dependsOn": ["^build"]
-    },
+    "test": {},
     "test:coverage": {
-      "dependsOn": ["^build"],
       "outputs": ["coverage/**"]
+    },
+    "@my-app/backend#type-check": {
+      "dependsOn": ["^build"]
+    },
+    "@my-app/backend#test": {
+      "dependsOn": ["^build"]
+    },
+    "@my-app/backend#test:coverage": {
+      "dependsOn": ["^build"]
+    },
+    "@my-app/frontend#build": {
+      "inputs": ["$TURBO_DEFAULT$", "!android/**", "!ios/**"]
+    },
+    "@my-app/frontend#lint": {
+      "inputs": ["$TURBO_DEFAULT$", "!android/**", "!ios/**"]
+    },
+    "@my-app/frontend#lint:fix": {
+      "inputs": ["$TURBO_DEFAULT$", "!android/**", "!ios/**"]
+    },
+    "@my-app/frontend#type-check": {
+      "inputs": ["$TURBO_DEFAULT$", "!android/**", "!ios/**"]
+    },
+    "@my-app/frontend#test": {
+      "inputs": ["$TURBO_DEFAULT$", "!android/**", "!ios/**"]
+    },
+    "@my-app/frontend#test:coverage": {
+      "inputs": ["$TURBO_DEFAULT$", "!android/**", "!ios/**"]
     },
     "clean": {
       "cache": false
